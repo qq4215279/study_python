@@ -1,0 +1,25 @@
+{{ title }}
+==============
+{% for method in msg %}
+{% set methodName = method['name'] %}
+- [{{loop.index}}. {{methodName}}](#{{loop.index}}-)
+{% endfor %}
+
+{% for method in msg %}
+{% set methodName = method['name'] %}
+{% set command = method['command'] %}
+{% set rtn = method['rtn'] %}
+## {{loop.index}}. {{methodName}}
+- command: `{{command}}`
+- args:
+{% for param in method['params'] %}
+	
+	{{param}}:
+{% endfor %}
+- return:
+
+```json
+{{rtn}}
+```
+
+{% endfor %}
