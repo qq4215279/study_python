@@ -2,11 +2,15 @@
 
 import time
 import io
+import platform
 
 # 换行符：\
 s = '我是一个字符串，' \
     '可以换行的字符串'
 print(s)
+
+# 打印python版本号
+print(platform.python_version())
 
 # 可换行的字符串：""" 或 '''
 sql = """create table t_person(
