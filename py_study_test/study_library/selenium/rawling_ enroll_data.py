@@ -32,7 +32,7 @@ s = Service(executable_path=path)
 options = ChromeOptions()
 options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
 # browser = webdriver.Chrome(executable_path=path, chrome_options=options)
-browser = webdriver.Chrome(service=s, chrome_options=options)
+browser = webdriver.Chrome(service=s, options=options)
 
 browser.get(url)
 time.sleep(2)
