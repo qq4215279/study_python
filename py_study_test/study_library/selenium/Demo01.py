@@ -1,4 +1,5 @@
 from selenium import webdriver
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.select import Select
 import time
 
@@ -13,18 +14,10 @@ import time
 4. scrapy：另一个爬虫神器，适合爬取大量页面，甚至对分布式爬虫提供了良好的支持。强烈推荐。
 """
 
-"""
-使用selenium
-1. 需要先下载 chromedriver.exe （与自己的谷歌浏览器版本相同）
-    - 在Chrome浏览器地址栏中输入 chrome://version/
-    - 下载 chromedriver.exe   => 下载地址  http://chromedriver.storage.googleapis.com/index.html
-2.     
-
-"""
-
 # 用代码打开一个浏览器
 # 尝试传参
-path = r"D:\Install\App\Google安装\chromedriver.exe"
+# path = r"D:\Install\App\Google安装\chromedriver.exe"
+path = r"D:\Install\Google\chromedriver.exe"
 browser = webdriver.Chrome(executable_path=path)
 
 # 在地址栏输入地址
@@ -52,7 +45,8 @@ print(browser.page_source)
 """
 
 with open('baidu.html', 'w', encoding='utf-8') as f:
-    f.write(browser.page_source)  # 包含redner+ajax
+    # 包含 redner + ajax
+    f.write(browser.page_source)
 
 # 关闭浏览器
 browser.close()
