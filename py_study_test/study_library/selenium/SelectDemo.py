@@ -4,11 +4,11 @@ from selenium.webdriver.support.select import Select
 import time
 
 # 家里
-# path = r"D:\Install\App\Google安装\chromedriver.exe"
-# url = 'D:\Code\PythonWorkSpace\study_python\py_study_test\study_library\selenium\帅哥.html'
+path = r"D:\Install\App\Google安装\chromedriver.exe"
+url = 'D:\Code\PythonWorkSpace\study_python\py_study_test\study_library\selenium\帅哥.html'
 # 公司
-path = r"D:\Install\Google\chromedriver.exe"
-url = 'D:\data\code\pythonWorkSpace\study_python\py_study_test\study_library\selenium\帅哥.html'
+# path = r"D:\Install\Google\chromedriver.exe"
+# url = 'D:\data\code\pythonWorkSpace\study_python\py_study_test\study_library\selenium\帅哥.html'
 
 browser = webdriver.Chrome(executable_path=path)
 

@@ -12,75 +12,67 @@ import json
 """
 爬取2021江西高考录取数据
 地址：https://daxue.163.com/find/enroll-data
+
+尝试传参 https://blog.csdn.net/sinat_29957455/article/details/122242196
 """
 
-caps = {
-    'browserName': 'chrome',
-    'loggingPrefs': {
-        'browser': 'ALL',
-        'driver': 'ALL',
-        'performance': 'ALL',
-    },
-    'goog:chromeOptions': {
-        'perfLoggingPrefs': {
-            'enableNetwork': True,
-        },
-        'w3c': False,
-    },
-}
 
 url = "https://daxue.163.com/find/enroll-data"
 
-path = r"D:\Install\Google\chromedriver.exe"
-# browser = webdriver.Chrome(executable_path=path)
-
-# 尝试传参 https://blog.csdn.net/sinat_29957455/article/details/122242196
-# # s = Service("chromedriver.exe")
-s = Service(path)
-# browser = webdriver.Chrome(service=s)
-
+# 家里
+path = r"D:\Install\App\Google安装\chromedriver.exe"
+# 公司
+# path = r"D:\Install\Google\chromedriver.exe"
 
 
 # 加载cookies中已经保存的账号和密码
 # C:\Users\liuzhen\AppData\Local\Google\Chrome\Application\chrome.exe -remote-debugging-port=9222 --user-data-dir="C:\Users\liuzhen\AppData\Local\Google\Chrome\User Data"
+
+s = Service(path)
 options = ChromeOptions()
 options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
-browser = webdriver.Chrome(service=s, chrome_options=options, desired_capabilities=caps)
 # browser = webdriver.Chrome(executable_path=path, chrome_options=options)
+browser = webdriver.Chrome(service=s, options=options)
 
 browser.get(url)
-time.sleep(2)
+time.sleep(3)
 
 print("--------------------------------->")
-
+# //*[@id="__layout"]/div/div[4]/div/div[2]/div[1]/div/input
 element = browser.find_element(By.XPATH, '//*[@id="__layout"]/div/div[4]/div/div[2]/div[1]/div/input')
+print('id: ', element.id)
+print('text: ', element.text)
+element.send_keys("东华理工大学")
 
-print(element.id)
-print(element.text)
+# 单选
+time.sleep(3)
+browser.find_element(By.XPATH, '//*[@id="__layout"]/div/div[4]/div/div[2]/div[3]/div[2]/div/label[2]/span[1]/input').click()
 
-element.send_keys("南昌大学")
+# ==========> 下拉框
+# name = browser.find_element(By.XPATH, '/html/body/div[3]/div[1]/div[1]')
+# 根据索引选择
+# Select(name).select_by_index(1)
+# Select(name).select_by_value("本科第二批")
+time.sleep(2)
 
-#
+
+# 搜索方式1  失败！！
 # element2 = browser.find_element(By.XPATH, '//*[@id="__layout"]/div/div[4]/div/div[2]/div[1]/div/div/div/i')
 # element2.click()
-
+# 搜索方式2  可用！
 action = ActionChains(browser)
 one_click = browser.find_element(By.XPATH, '//*[@id="__layout"]/div/div[4]/div/div[2]/div[1]/div/div/div/i')
 action.click(one_click).perform()
 
 time.sleep(2)
 
+txt = browser.find_element(By.XPATH, '//*[@id="__layout"]/div/div[4]/div/div[3]/div[2]/div/div').text
+print("txt: ", txt)
 
-# 打印当前页面的html内容
-# print(browser.page_source)
 
 # with open('gaokao.html', 'w', encoding='utf-8') as f:
 #     # 包含 redner + ajax
 #     f.write(browser.page_source)
 
-logs = [json.loads(log['message'])['message'] for log in browser.get_log('performance')]
 
-with open('devtools.json', 'wb') as f:
-    json.dump(logs, f)
-
-browser.close()
+# browser.close()
