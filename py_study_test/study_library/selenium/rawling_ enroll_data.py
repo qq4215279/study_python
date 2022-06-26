@@ -28,14 +28,14 @@ path = r"D:\Install\App\Google安装\chromedriver.exe"
 # 加载cookies中已经保存的账号和密码
 # C:\Users\liuzhen\AppData\Local\Google\Chrome\Application\chrome.exe -remote-debugging-port=9222 --user-data-dir="C:\Users\liuzhen\AppData\Local\Google\Chrome\User Data"
 
-s = Service(path)
+s = Service(executable_path=path)
 options = ChromeOptions()
 options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
 # browser = webdriver.Chrome(executable_path=path, chrome_options=options)
-browser = webdriver.Chrome(service=s, options=options)
+browser = webdriver.Chrome(service=s, chrome_options=options)
 
 browser.get(url)
-time.sleep(3)
+time.sleep(2)
 
 print("--------------------------------->")
 # //*[@id="__layout"]/div/div[4]/div/div[2]/div[1]/div/input
@@ -45,15 +45,15 @@ print('text: ', element.text)
 element.send_keys("东华理工大学")
 
 # 单选
-time.sleep(3)
-browser.find_element(By.XPATH, '//*[@id="__layout"]/div/div[4]/div/div[2]/div[3]/div[2]/div/label[2]/span[1]/input').click()
+# time.sleep(3)
+# browser.find_element(By.XPATH, '//*[@id="__layout"]/div/div[4]/div/div[2]/div[3]/div[2]/div/label[2]/span[1]/input').click()
 
 # ==========> 下拉框
 # name = browser.find_element(By.XPATH, '/html/body/div[3]/div[1]/div[1]')
 # 根据索引选择
 # Select(name).select_by_index(1)
 # Select(name).select_by_value("本科第二批")
-time.sleep(2)
+# time.sleep(2)
 
 
 # 搜索方式1  失败！！
