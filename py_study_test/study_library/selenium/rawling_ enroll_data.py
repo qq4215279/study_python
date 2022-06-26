@@ -26,7 +26,7 @@ path = r"D:\Install\App\Google安装\chromedriver.exe"
 
 
 # 加载cookies中已经保存的账号和密码
-# C:\Users\liuzhen\AppData\Local\Google\Chrome\Application\chrome.exe -remote-debugging-port=9222 --user-data-dir="C:\Users\liuzhen\AppData\Local\Google\Chrome\User Data"
+# 家里： C:\Users\liuzhen\AppData\Local\Google\Chrome\Application\chrome.exe -remote-debugging-port=9222 --user-data-dir="C:\Users\liuzhen\AppData\Local\Google\Chrome\User Data"
 
 s = Service(executable_path=path)
 options = ChromeOptions()
