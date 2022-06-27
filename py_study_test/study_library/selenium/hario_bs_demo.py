@@ -1,5 +1,3 @@
-# encoding: utf-8
-
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -12,16 +10,15 @@ import time
 import json
 
 """
-爬取2021江西高考录取数据
-地址：https://daxue.163.com/find/enroll-data
+bs 后台 -- 员工管理
+地址：http://bs.zjzr2.hariogame.com/#/gold/employee
 
 尝试传参 https://blog.csdn.net/sinat_29957455/article/details/122242196
 """
 
 
-url = "https://daxue.163.com/find/enroll-data"
-# 家里
-# path = r"D:\Install\App\Google安装\chromedriver.exe"
+url = "http://bs.zjzr2.hariogame.com/#/gold/employee"
+
 # 公司
 path = r"D:\Install\Google\chromedriver.exe"
 
@@ -35,8 +32,6 @@ options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
 # browser = webdriver.Chrome(executable_path=path, chrome_options=options)
 browser = webdriver.Chrome(service=s, options=options)
 
-browser = g
-
 browser.get(url)
 time.sleep(2)
 
@@ -44,12 +39,11 @@ print("--------------------------------->")
 
 action = ActionChains(browser)
 
-# browser.find_element(By.XPATH, '//*[@id="__layout"]/div/div[4]/div/div[1]/div[2]').click()
-
+browser.find_element(By.XPATH, '//*[@id="__layout"]/div/div[4]/div/div[1]/div[2]').click()
 aa = browser.find_element(By.XPATH, '//*[@id="__layout"]/div/div[4]/div/div[1]/div[2]')
 action.click(aa).perform()
 
-# 搜索框
+# //*[@id="__layout"]/div/div[4]/div/div[2]/div[1]/div/input
 element = browser.find_element(By.XPATH, '//*[@id="__layout"]/div/div[4]/div/div[2]/div[1]/div/input')
 print('id: ', element.id)
 print('text: ', element.text)
@@ -81,9 +75,9 @@ txt = browser.find_elements(By.XPATH, '//*[@id="__layout"]/div/div[4]/div/div[3]
 print("txt: ", txt)
 
 
-with open('gaokao.html', 'w', encoding='utf-8') as f:
-    # 包含 redner + ajax
-    f.write(browser.page_source)
+# with open('gaokao.html', 'w', encoding='utf-8') as f:
+#     # 包含 redner + ajax
+#     f.write(browser.page_source)
 
 
 time.sleep(36000)
