@@ -28,7 +28,7 @@ print("1------->")
 2. 字典 -> json字符串
 
 """
-res2 = {"关键字一号": "123", "key2": "abc"}
+res2 = {"关键字一号" : "123", "key2" : "abc"}
 # res2_json = json.dumps(res2, indent=4, ensure_ascii=False)
 res2_json = json.dumps(res2, indent=4, ensure_ascii=False).decode('utf8')
 

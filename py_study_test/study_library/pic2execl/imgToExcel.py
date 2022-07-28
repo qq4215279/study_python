@@ -1,10 +1,8 @@
-#coding=utf-8
-import sys
-# import ocr
-# import yaml
+# coding=utf-8
 import yaml
 
-from study_library.pic2excel import ocr
+from study_library.pic2execl import ocr
+# from study_library.pic2execl.ocr import *
 
 
 def get_yaml_data(yaml_file):
@@ -17,7 +15,7 @@ def get_yaml_data(yaml_file):
     return data
 
 def imageToExcel(pic_path):
-    config_path = 'D:\data\code\pythonWorkSpace\study_python\py_study_test\study_library\pic2excel\config.yaml.py'
+    config_path = '/study2_library\pic2excel\config.yaml.py'
 
     config = get_yaml_data(config_path)
     # config = get_yaml_data("config.yml")

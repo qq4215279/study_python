@@ -53,7 +53,7 @@ list.count(x)           计数                返回指定元素 x 在列表 lis
 len(list)               列表长度            返回列表中包含元素的个数
 list.reverse()          翻转列表            所有元素原地翻转
 list.sort()             排序                所有元素原地排序
-list.copy()             浅拷贝              返回列表对象的浅拷贝
+·
 
 list[index]             访问元素            list[1]
 list.index(x)           获取指定元素首次出现的索引位置。语法是：index(value,[start,[end]])。其中， start 和 end 指定了搜索的范围。
