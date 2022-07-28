@@ -3,6 +3,7 @@
 import time
 import io
 import platform
+import yaml
 
 # 换行符：\
 s = '我是一个字符串，' \
