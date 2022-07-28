@@ -12,8 +12,10 @@ from selenium.webdriver import ChromeOptions
 import time
 import json
 
-
-path = r"D:\Install\Google\chromedriver.exe"
+# 家里
+path = r"D:\Install\App\Google安装\chromedriver.exe"
+# 公司
+# path = r"D:\Install\Google\chromedriver.exe"
 s = Service(path)
 
 opt = Options()
@@ -21,7 +23,8 @@ opt.add_experimental_option('excludeSwitches', ['enable-automation'])
 opt.add_argument('--headless')
 
 # browser = webdriver.Chrome(service=s, options=opt)
-browser = webdriver.Chrome(service=s)
+# browser = webdriver.Chrome(service=s)
+browser = webdriver.Chrome(options=opt)
 
 # 打开江西教育考试院
 browser.get('http://www.jxeea.cn/col/col26681/index.html')
@@ -29,7 +32,7 @@ browser.get('http://www.jxeea.cn/col/col26681/index.html')
 time.sleep(2)
 
 # year = browser.find_element(By.XPATH, '//*[@id="year"]')
-year = browser.find_element(By.ID, 'year')
+year = browser.find_element(By.ID, "year")
 # 根据索引选择
 Select(year).select_by_index("0")
 
