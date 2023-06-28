@@ -8,8 +8,8 @@ os 模块提供了对目录或文件的一般操作。shutil 模块作为补充�
 """
 
 # copy 文件内容
-shutil.copyfile("1.txt", "1_copy.txt")
+shutil.copyfile("a.txt", "a_copy.txt")
 
 # 实例：实现递归的拷贝文件夹内容
 # "音乐"文件夹不存在才能用。
-shutil.copytree("电影/学习", "音乐", ignore=shutil.ignore_patterns("*.html", "*.htm"))
+# shutil.copytree("电影/学习", "音乐", ignore=shutil.ignore_patterns("*.html", "*.htm"))

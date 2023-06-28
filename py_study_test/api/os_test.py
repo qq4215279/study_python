@@ -33,10 +33,10 @@ os 模块 - 调用操作系统命令
 # os.remove("D:\\Code\\PythonWorkSpace\\study_python\\py_study_test\\file\\testXLS.xls")
 
 # 8. rename(src, dest)  重命名文件或目录
-# os.rename("电影", "movie")
+# os.rename("电影", "电影")
 
 # 9. listdir(path) 返回 path 目录下的文件和目录列表
-# dirs = os.listdir("movie")
+# dirs = os.listdir("电影")
 # print(dirs)
 
 # 10. getcwd() 返回当前工作目录：current work dir
