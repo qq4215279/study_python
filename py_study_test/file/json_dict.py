@@ -29,8 +29,8 @@ print("1------->")
 
 """
 res2 = {"关键字一号" : "123", "key2" : "abc"}
-# res2_json = json.dumps(res2, indent=4, ensure_ascii=False)
-res2_json = json.dumps(res2, indent=4, ensure_ascii=False).decode('utf8')
+res2_json = json.dumps(res2, indent=4, ensure_ascii=False)
+# res2_json = json.dumps(res2, indent=4, ensure_ascii=False).decode('utf8')
 
 print(res2_json)
 print(type(res2_json))
@@ -40,7 +40,7 @@ print("2------->")
 3. 将文件里的json内容  -> 字段dict  
 
 """
-with open(r'jsonFile.json', "r") as jsonFile:
+with open(r'jsonFile.json', "r", encoding='utf-8') as jsonFile:
     # data = jsonFile.read().decode(encoding='utf-8').encode(encoding='utf-8')
     # res222 = json.loads(data)
     # print(res222)
@@ -54,7 +54,7 @@ with open(r'jsonFile.json', "r") as jsonFile:
 """
 4. 将字典 ->  写入文件
 """
-res2 = {"关键字2好": "123", "key2": "abc"}
-f4 = open('testjson.txt', mode='w')  # 只写模式打开文件
+res2 = {"关键字2号": "123", "key2": "abc"}
+f4 = open('testjson2.json', mode='w', encoding='utf-8')  # 只写模式打开文件
 # 将字典直接通过dump转换成字典后写入文件对象f，不需要转换成字典赋值给对象，然后再调用f.write()写入文件。从而更加高效的实现了文件的写入
 json.dump(res2, f4, indent=4, ensure_ascii=False)

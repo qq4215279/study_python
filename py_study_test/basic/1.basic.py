@@ -69,3 +69,7 @@ str11 = "字符串1"
 str2 = "字符串2"
 print(str1 is str11)  # True
 print(str1 == str11)  # True
+
+# input()
+x = int(input("请输入一个数字"))
+print("输入的数字：", x)

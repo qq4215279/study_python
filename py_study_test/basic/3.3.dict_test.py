@@ -3,7 +3,7 @@
 # import random
 
 '''
-序列 - 2. 元组 tuple
+序列 - 2. 元组 dict
 元组：元组属于不可变序列，不能修改元组中的元素。
 '''
 
@@ -15,26 +15,26 @@
 4. 通过 fromkeys 创建值为空的字典
 '''
 # 1.
-tuple1 = {'name': 'liuzhen', 'age': 25, 'job': 'programmer'}
-tuple2 = {}
-print(tuple1)
-print(tuple2)
+dict1 = {'name': 'liuzhen', 'age': 25, 'job': 'programmer'}
+dict2 = {}
+print(dict1)
+print(dict2)
 
 # 2. dict()
-tuple3 = dict(name='gaoqi', age=18, job='programmer')
-tuple4 = dict()
-print(tuple3)
-print(tuple4)
+dict3 = dict(name='gaoqi', age=18, job='programmer')
+dict4 = dict()
+print(dict3)
+print(dict4)
 
 # 3. zip()创建字典对象
 key = ['name', 'age', 'job']
 value = ['gaoqi', 18, 'techer']
-tuple5 = dict(zip(key, value))
-print(tuple5)
+dict5 = dict(zip(key, value))
+print(dict5)
 
 # 4. fromkeys 创建值为空的字典
-tuple6 = dict.fromkeys(['name', 'age', 'job'])
-print(tuple6)
+dict6 = dict.fromkeys(['name', 'age', 'job'])
+print(dict6)
 
 '''
 字典元素的访问
@@ -46,23 +46,23 @@ print(tuple6)
 6. 检测一个“键”是否在字典中
 '''
 # 1.
-tuple0 = {'name': 'liuzhen', 'age': 25, 'job': 'programmer'}
-print(tuple0["name"])
+dict0 = {'name': 'liuzhen', 'age': 25, 'job': 'programmer'}
+print(dict0["name"])
 # sex = tuple0["sex"]  # 不存在
 # 2.
-name = tuple0.get("name")
+name = dict0.get("name")
 print(name)
 # 3.
-dict_items = tuple0.items()
+dict_items = dict0.items()
 print(dict_items)  # dict_items([('name', 'liuzhen'), ('age', 25), ('job', 'programmer')])
 # 4.
-keys = tuple0.keys()
+keys = dict0.keys()
 print(keys)  # dict_keys(['name', 'age', 'job'])
 # 5.
-len = len(tuple0)
+len = len(dict0)
 print(len)  # 3
 # 6.
-flag = "name" in tuple0
+flag = "name" in dict0
 print(flag)  # True
 
 '''
@@ -77,26 +77,26 @@ print(flag)  # True
 若想一个接一个地移除并处理项，这个方法就非常有效（因为不用首先获取键的列表）。
 '''
 # 1.
-tuple0 = {'name': 'liuzhen', 'age': 25, 'job': 'programmer'}
-tuple0["sex"] = "男"
-tuple0["age"] = "100"
-print(tuple0)  # {'name': 'liuzhen', 'age': '100', 'job': 'programmer', 'sex': '男'}
+dict0 = {'name': 'liuzhen', 'age': 25, 'job': 'programmer'}
+dict0["sex"] = "男"
+dict0["age"] = "100"
+print(dict0)  # {'name': 'liuzhen', 'age': '100', 'job': 'programmer', 'sex': '男'}
 # 2. update()
 b = {'name': '刘振', 'money': 100000, 'sex': '男'}
-tuple0.update(b)
-print(tuple0)  # {'name': '刘振', 'age': '100', 'job': 'programmer', 'sex': '男', 'money': 100000}
+dict0.update(b)
+print(dict0)  # {'name': '刘振', 'age': '100', 'job': 'programmer', 'sex': '男', 'money': 100000}
 # 3.
-del (tuple0["money"])
-print(tuple0)  # {'name': '刘振', 'age': '100', 'job': 'programmer', 'sex': '男'}
-sex = tuple0.pop("sex")
+del (dict0["money"])
+print(dict0)  # {'name': '刘振', 'age': '100', 'job': 'programmer', 'sex': '男'}
+sex = dict0.pop("sex")
 print(sex)  # 男
-print(tuple0)  # {'name': '刘振', 'age': '100', 'job': 'programmer'}
-tuple0.clear()
-print(tuple0)  # {}
+print(dict0)  # {'name': '刘振', 'age': '100', 'job': 'programmer'}
+dict0.clear()
+print(dict0)  # {}
 
 # 4. popitem()
-tuple0 = {'name': 'liuzhen', 'age': 25, 'job': 'programmer'}
-res = tuple0.popitem()
+dict0 = {'name': 'liuzhen', 'age': 25, 'job': 'programmer'}
+res = dict0.popitem()
 print(res)  # ('job', 'programmer')
 
 '''

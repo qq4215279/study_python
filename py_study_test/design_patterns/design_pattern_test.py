@@ -25,9 +25,13 @@ class MySingleton:
 
 instance1 = MySingleton("liuzhen")
 print(instance1)
+print(instance1.name)
 
 instance2 = MySingleton("hahaha")
 print(instance2)
+print(instance1.name)
+
+print("---------------->")
 
 class CarFactory:
     __obj = None
