@@ -4,7 +4,7 @@
 infile = open(name,'rw')
 python 中文件打开操作的mode中没有“rw”
 合法的mode有：
-r、rb、r+、rb+、w、wb、w+、wb+、a、ab、a+、ab+
+r、r+、rb、rb+、w、w+、wb、wb+、a、a+、ab、ab+
 """
 
 # with open(r"f1.txt","w") as f1:
