@@ -1,0 +1,78 @@
+{%- set className = tableToClass(tableName) -%}
+package {{packageName}};
+
+{% if importContent != "" -%}
+{{ importContent }}
+{%- else -%}
+import com.reign.framework.memorydb.AbstractDomain;
+import com.reign.framework.memorydb.AbstractLockableDomain;
+import com.reign.framework.memorydb.annotation.AutoId;
+import com.reign.framework.memorydb.annotation.BTreeIndexs;
+import com.reign.framework.memorydb.annotation.BTreeIndex;
+import com.reign.framework.jdbc.orm.annotation.Id;
+import com.reign.framework.jdbc.orm.annotation.JdbcEntity;
+{%- endif %}
+
+
+/**
+ * {{tableName}}表的POJO
+ * 
+ * @author   wangys
+ * @version  1.0.0.0  {{time}}
+ */
+@JdbcEntity
+{%- if autoId %}
+@AutoId
+{%- endif %}
+{%- if tableConfig.has_key('indexs') and len(tableConfig['indexs']) > 0 %}
+@BTreeIndexs({ 
+    {% for index in tableConfig['indexs'] %}
+    {%- if loop.index > 1 %}, {% endif %}{% if loop.index > 1 %}
+    {% endif %}@BTreeIndex(name = "{{ index['name'] }}", value = { {%- for v in index['fields'] %} {%- if loop.index > 1 %},{%- endif %} "{{ v }}" {%- endfor %} }, unique={%- if index.has_key('unique') %} {{ index['unique'] }} {%- else %} True {%- endif%})
+    {%- endfor %}
+})
+{%- endif %}
+public class {{ className }} extends {%- if tableConfig['lockable'] %} AbstractLockableDomain {%- else %} AbstractDomain {%- endif %} {
+    /**
+     * serialVersionUID
+     */
+    private static final long serialVersionUID = 1L;
+    
+    {% for field in fields %}
+    /** {{field[3]}} */
+    {%- if field[2] %}
+    @Id
+    {%- endif %}
+    private {{field[1]}} {{columnNameToFieldName(field[0])}};    
+    {% endfor %}
+    
+    
+    {%- for field in fields %}
+    public {{field[1]}} {{getter(field[0])}}() {
+        return {{columnNameToFieldName(field[0])}};
+    }
+
+    public void {{setter(field[0])}}({{field[1]}} {{columnNameToFieldName(field[0])}}) {
+        super.mark();
+        this.{{columnNameToFieldName(field[0])}} = {{columnNameToFieldName(field[0])}};
+    }
+    {% endfor %}
+    
+   /**
+    * @see com.reign.framework.memorydb.AbstractDomain#clone()
+    */
+    @Override    
+    public Object clone() {
+        {{ className }} obj = new {{ className }}();
+        {% for field in fields %}
+        obj.{{columnNameToFieldName(field[0])}} = this.{{columnNameToFieldName(field[0])}};
+        {%- endfor %}
+        
+        return obj;
+    }
+
+    // Not Auto-generated Code Start
+
+{{ customContent }}
+    // Not Auto-generated Code End
+}

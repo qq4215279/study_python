@@ -1,0 +1,84 @@
+package {{ package }};
+
+import java.util.List;
+
+import com.reign.framework.json.JsonDocument;
+
+ /**
+  * {{ msg['name'] }}
+  */
+public class {{ msg['name'] }} {%- if msg.has_key('extends') %} extends {{ msg['extends'] }} {%- endif %} {
+    /** 位置标识 */
+    private static int BIT_FLAGS = {{ msg['bitFlags'] }};
+    private int bitFlags;
+    
+    {% for column in msg['columns'] %}
+    {% set fieldName = column[2] %}
+    {% set methodName = column[2][0].upper() + column[2][1:] %}
+    /** {{ column[4] }} */
+    private {{ column[1] }} {{ fieldName }};
+    public boolean need{{ methodName }}() {
+        return (BIT_FLAGS & {{ column[3] }}) == {{ column[3] }};
+    }
+    public boolean has{{ methodName }}() {
+        return (bitFlags & {{ column[3] }}) == {{ column[3] }};
+    }
+    public void set{{ methodName }} ({{ column[1] }} {{ fieldName }}) {
+        this.{{ fieldName }} = {{ fieldName }};
+        this.bitFlags |= {{ column[3] }};
+    }
+    public {{ column[1] }} get{{ methodName }}() {
+        return this.{{ fieldName }};
+    }
+    {% endfor %}
+    
+    /**
+     * 转换为Json数据
+     */
+    public byte[] toJson() {
+        return toJson(null);
+    }
+    
+    /**
+     * 转换为Json数据
+     */
+    public byte[] toJson(String title) {
+        JsonDocument doc = new JsonDocument();
+        if (null != title) {
+           doc.createElement(title, this);
+        } else {
+           doc.createElement(this);
+        }
+        return doc.toByte();
+    }
+    
+    
+    {% for innerMsg in msg['innerMsgs'] %}
+    public static class {{ innerMsg['name'] }} {
+        /** 位置标识 */
+        private static int BIT_FLAGS = {{ innerMsg['bitFlags'] }};
+        private int bitFlags;
+        
+        {% for column in innerMsg['columns'] %}
+        {% set fieldName = column[2] %}
+        {% set methodName = column[2][0].upper() + column[2][1:] %}
+        /** {{ column[4] }} */
+        private {{ column[1] }} {{ fieldName }};
+        public boolean need{{ methodName }}() {
+            return (BIT_FLAGS & {{ column[3] }}) == {{ column[3] }};
+        }
+        public boolean has{{ methodName }}() {
+            return (bitFlags & {{ column[3] }}) == {{ column[3] }};
+        }
+        public void set{{ methodName }} ({{ column[1] }} {{ fieldName }}) {
+            this.{{ fieldName }} = {{ fieldName }};
+            this.bitFlags |= {{ column[3] }};
+        }
+        public {{ column[1] }} get{{ methodName }}() {
+            return this.{{ fieldName }};
+        }
+        {% endfor %}
+    }
+    {% endfor %}
+    
+}

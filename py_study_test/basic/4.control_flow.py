@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 '''
 控制语句
 '''
@@ -114,6 +116,8 @@ num = 10
 while num < 12:
     print("while循环：num = " + str(num))
     num = num + 1
+else:
+    print("111")
 
 # 可迭代对象 -- for循环
 for x in [10, 20, 30]:

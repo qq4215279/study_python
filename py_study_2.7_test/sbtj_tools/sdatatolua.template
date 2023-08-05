@@ -1,0 +1,17 @@
+{% for tableName, tableData in tables.items() %}
+{%- set className = tableToClass(tableName) -%}
+---@class Sdata.{{ className }}
+local {{ className }} = class("{{ className }}")
+function {{ className }}:Ctor(...)
+    local args = {...}
+    {% for field in tableData['fields'] %}
+    {%- set fieldName = columnNameToFieldName(field) -%}
+    self.{{ fieldName }} = args[{{ loop.index }}]
+    {% endfor %}
+end
+
+-- 插入{{ className }}
+{% for data in tableData['datas'] -%}
+sdata:Create("{{ tableName }}", "{{ data['rowData'] }}", {{ className }}.New({%- for field in tableData['fields'] %}{%- if loop.index > 1 -%}, {% endif %}{% if loop.index > 1 %}{% endif %}"{{ data[field] }}"{% endfor %}))
+{% endfor %}
+{% endfor %}

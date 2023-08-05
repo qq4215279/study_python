@@ -5,6 +5,29 @@ import io
 import platform
 import yaml
 
+"""
+1. 在字符串前面加上 r 表示原始字符串（Raw String），它的作用是告诉Python解释器不对字符串中的转义字符进行特殊处理，而是将字符串内容按照字面意义来使用。
+2. 在字符串前面加上 b ，表示生成字节字符串
+3. 在字符串前面加上 f ，表示对字符串进行格式化。
+"""
+def specialStr():
+    # 1. r""
+    normal_string = "Hello\nWorld"
+    print("normal_string: ", normal_string)
+    rStr = r"Hello\nWorld"
+    print("rStr: ", rStr)
+
+    # 2. b""
+    bStr = b"Hello World"
+    print("bStr type: ", type(bStr))  # bStr type:  <class 'bytes'>
+
+    # 3. f""
+    name = "lihua"
+    fStr = f"My name is {name}"
+    print("fStr: ", fStr)
+
+specialStr()
+
 # 换行符：\
 s = '我是一个字符串，' \
     '可以换行的字符串'
@@ -22,7 +45,7 @@ sql = """create table t_person(
 print("sql: ", sql)
 
 '''
-Python中，一切皆对象。**每个对象由：标识（identity）、类型（type）、value（值） 组成。
+Python中，一切皆对象。每个对象由：标识（identity）、类型（type）、value（值） 组成。
 id(obj): 返回对象 obj 的标识。
 type(obj): 获得对象的所属类型。
 print(obj): 直接打印出值。
@@ -73,3 +96,10 @@ print(str1 == str11)  # True
 # input()
 x = int(input("请输入一个数字"))
 print("输入的数字：", x)
+
+
+"""
+pass 是 Python 中的一个关键字，它是一个空语句，用于在代码块中占位或表示空操作。在某些情况下，语法要求有语句存在，但你又不想执行任何实际的操作时，可以使用 pass 关键字。
+    eg: class MyClass:
+            pass
+"""

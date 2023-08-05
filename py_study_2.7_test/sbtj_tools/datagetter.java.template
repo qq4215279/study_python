@@ -1,0 +1,38 @@
+{{ headerContent }}
+
+{{ importContent }}
+import {{ daoPackage }};
+
+{{ classContent }}
+    // Auto-generated Code Start Don't Modify
+    {{ autoContent1 }}
+{% if not isSdata %}  
+    @Autowired
+    private {{ daoName }} {{ daoName[0:1].lower() + daoName[1:] }};
+{% endif %}
+    // Auto-generated Code End Don't Modify
+
+    {{ leftContent1 }}
+
+    // Auto-generated Code Start Don't Modify
+    {{ autoContent2 }}
+{% if not isSdata %}
+    /**
+     * @see com.reign.sbtj.common.data.IDataGetter#get{{ daoName }}()
+     */
+    @Override
+    public {{ daoName }} get{{ daoName }}() {
+        return {{ daoName[0:1].lower() + daoName[1:] }};
+    }
+{% else %}
+    /**
+     * @see com.reign.sbtj.common.data.IDataGetter#get{{ daoName }}()
+     */
+    @Override
+    public {{ daoName }} get{{ daoName }}() {
+        return sdataCacheFactory.getCache({{ daoName }}.class);
+    }
+{% endif %}
+    // Auto-generated Code End Don't Modify
+
+    {{ leftContent2 }}

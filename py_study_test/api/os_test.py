@@ -15,38 +15,38 @@ os 模块 - 调用操作系统命令
 
 # 常用操作文件的方法
 # 目录操作的相关方法
-# 3. mkdir(path)  创建目录
-# os.mkdir("书籍")
+# 3. os.mkdir(path)  创建目录
+# os.mkdir("file")
 
-# 4. makedirs(path1/path2/path3/... )  创建多级目录
-# os.makedirs("电影/港台/周星驰")
-# os.makedirs("./音乐/香港/刘德华") # ../指的是上一级目录
+# 4. os.makedirs(path1/path2/path3/... )  创建多级目录
+# os.makedirs("file/电影/港台/周星驰")
+# os.makedirs("./file/音乐/香港/刘德华") # ../指的是上一级目录
 
-# 5. rmdir(path)  删除目录
-# os.rmdir("书籍")  # 相对路径都是相对于当前的工作目录
+# 5. os.rmdir(path)  删除目录
+# os.rmdir("file")  # 相对路径都是相对于当前的工作目录
 
-# 6. removedirs(path1/path2...)  删除多级目录
-# os.removedirs("电影/港台/周星驰")  # 只能删除空目录
-# os.removedirs("./音乐/香港/刘德华")  # 只能删除空目录
+# 6. os.removedirs(path1/path2...)  删除多级目录
+# os.removedirs("file/电影/港台/周星驰")  # 只能删除空目录
+# os.removedirs("./file/音乐/香港/刘德华")  # 只能删除空目录
 
-# 7. remove(path)  删除指定的文件
+# 7. os.remove(path)  删除指定的文件
 # os.remove("D:\\Code\\PythonWorkSpace\\study_python\\py_study_test\\file\\testXLS.xls")
 
-# 8. rename(src, dest)  重命名文件或目录
-# os.rename("电影", "电影")
+# 8. os.rename(src, dest)  重命名文件或目录
+# os.rename("file/电影", "电影")
 
-# 9. listdir(path) 返回 path 目录下的文件和目录列表
-# dirs = os.listdir("电影")
+# 9. os.listdir(path) 返回 path 目录下的文件和目录列表
+# dirs = os.listdir("file/电影")
 # print(dirs)
 
-# 10. getcwd() 返回当前工作目录：current work dir
+# 10. os.getcwd() 返回当前工作目录：current work dir
 # print("返回当前工作目录：" + os.getcwd())
 
 
-# 11. chdir(path)  把 path 设为当前工作目录
+# 11. os.chdir(path)  把 path 设为当前工作目录
 # os.chdir("d:") # 改变当前的工作目录为：d:盘根目录
 
-# 12. walk()  递归遍历所有文件和目录
+# 12. os.walk()  递归遍历所有文件和目录
 """
 os.walk()方法：返回一个 3 个元素的元组，(dirpath, dirnames, filenames), 
     dirpath：要列出指定目录的路径

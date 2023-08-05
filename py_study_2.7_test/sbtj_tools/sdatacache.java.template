@@ -1,0 +1,36 @@
+{%- set className = tableToClass(tableName) -%}
+/*
+ * $Header: {{className}}Manager.java
+ * $Revision: 1.0.0.0 
+ * $CreateDate: 2011-12-14
+ * $ModifyDate: 2011-12-14 下午05:33:37
+ * $Owner: 
+ *
+ * Copyright (c) 2011-2012 Shanghai Reign Co. Ltd.
+ * All Right Reserved.
+ */
+package {{packageName}};
+
+
+import java.util.List;
+
+import {{basePackage}}.domain.{{className}};
+import com.reign.framework.common.cache.AbstractCache;
+
+/**
+ * {{className}}Cache
+ * @author   Auto-generated
+ * @version  1.0.0.0  2011-12-14 下午05:33:37
+ */
+public class {{className}}Cache extends AbstractCache<{{idType}}, {{className}}> {
+    /**
+	 * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet()
+	 */
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		List<{{className}}> list = getSDataLoader().getModels({{className}}.class);
+		for ({{className}} item : list) {		
+			super.put(item.{{idGetter}}(), item);
+		}
+	}
+}
