@@ -120,27 +120,3 @@ name, age, job = s.items()  # 对键值对进行操作
 print(name)  # ('name', '刘振')
 name, age, job = s.values()  # 对值进行操作
 print(name)  # 刘振
-
-'''
-集合相关操作: 像数学中概念一样，Python 对集合也提供了并集、交集、差集等运算。我们给出示例
-'''
-a = {1, 3, 'sxt'}
-b = {'he', 'it', 'sxt'}
-# 并集
-c = a | b
-print(c)  # {1, 3, 'sxt', 'he', 'it'}
-# 交集
-c = a & b
-print(c)  # {'sxt'}
-# 差集
-c = a - b
-print(c)  # {1, 3}
-# 并集
-c = a.union(b)
-print(c)  # {1, 3, 'sxt', 'he', 'it'}
-# 交集
-c = a.intersection(b)
-print(c)  # {'sxt'}
-# 差集
-c = a.difference(b)
-print(c)  # {1, 3}

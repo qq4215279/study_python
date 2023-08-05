@@ -41,12 +41,12 @@ os.path 模块提供了目录相关（路径判断、路径切分、路径连接
 # print(os.path.join("aa", "bb", "cc"))  # 返回路径：aa\bb\cc
 
 # 12. split(path)  对路径进行分割，以列表形式返回
-path = os.path.abspath("D:/Code/PythonWorkSpace/study_python/py_study_test/api/a.txt")  # 返回绝对路径
+path = os.path.abspath("/api/file/a.txt")  # 返回绝对路径
 # print(os.path.split(path))  # 返回元组：目录、文件 ('D:\\Code\\PythonWorkSpace\\study_python\\py_study_test\\api', 'a.txt')
-path2 = os.path.abspath("D:\\Code\\PythonWorkSpace\\study_python\\py_study_test\\api\\a.txt")  # 返回绝对路径
+path2 = os.path.abspath("/api/file/a.txt")  # 返回绝对路径
 # print(os.path.split(path2))  # 返回元组：目录、文件 ('D:\\Code\\PythonWorkSpace\\study_python\\py_study_test\\api', 'a.txt')
 
-path3 = os.path.abspath("a.txt")  # 返回绝对路径
+path3 = os.path.abspath("file/a.txt")  # 返回绝对路径
 # print(os.path.split(path3))  # 返回元组：目录、文件 ('D:\\Code\\PythonWorkSpace\\study_python\\py_study_test\\api', 'a.txt')
 
 # 13. splitext(path)  从路径中分割文件的扩展名
