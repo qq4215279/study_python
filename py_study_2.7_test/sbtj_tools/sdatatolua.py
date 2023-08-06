@@ -420,7 +420,7 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv, "g:p:v:r:s:e:t:h:", ["game=", "path=", "version=", "region", "scope=", "env=", "tips=", "help="])
     except getopt.GetoptError:
-        print 'hotupdate -g <gameId> -p <resPackPath> -v <newVersion> -r <region> -s <scope> -e <env> [-t <tips>]'
+        print('hotupdate -g <gameId> -p <resPackPath> -v <newVersion> -r <region> -s <scope> -e <env> [-t <tips>]')
         sys.exit(2)
 
     for opt, arg in opts:
@@ -439,7 +439,7 @@ def main(argv):
         elif opt in ("-t", "--tips"):
             config['update_tips'] = arg
         elif opt in ("-h", "--help"):
-            print 'hotupdate -g <gameId> -p <resPackPath> -v <newVersion> -r <region> -s <scope> -e <env> [-t <tips>]'
+            print('hotupdate -g <gameId> -p <resPackPath> -v <newVersion> -r <region> -s <scope> -e <env> [-t <tips>]')
     # /home/hario/hotupdate.sh --game ${option.game} --region ${option.region} --scope ${option.scope} --version ${option.version} --env ${option.env} --isBeta ${option.isBeta} --hides ${option.hides}
     # -g gmmx -p F:/hotupdate/gmmx_cn_9.9.9.9_android_20190527180239_191_static_dynamic.zip -v 9.9.9.9 -r cn_luajit32 -u android,ast -t tips
 
