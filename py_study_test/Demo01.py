@@ -3,7 +3,7 @@
 import copy
 
 '''
-SyntaxError: Non-ASCII character '\xe6' in file D:/Code/PythonWorkSpace/PythonScript/study_test/demo01.py on line 32, but no encoding declared;
+SyntaxError: Non-ASCII character '\xe6' in api2 D:/Code/PythonWorkSpace/PythonScript/study_test/demo01.py on line 32, but no encoding declared;
 在第一行加上：# encoding: utf-8
 '''
 

@@ -1,8 +1,12 @@
 # coding:utf-8
+import os
+
 
 """
-infile = open(name,'rw')
-python 中文件打开操作的mode中没有“rw”
+创建文件对象  api2 = open(path, 打开方式, encoding="utf-8")  path: 文件可以自动生成，但文件所在目录必须存在！
+
+api2 = open(path,'rw')
+注：python 中文件打开操作的mode中没有“rw”
 合法的mode有：
     r 只读、rb 二进制只读、r+ 读写、rb+ 二进度读写、
     w 写、wb 二进制读写、w+ 读写、wb+ 二进制读写读写、
@@ -12,10 +16,10 @@ python 中文件打开操作的mode中没有“rw”
     'r'：只读模式
     'w'：只写模式（会截断文件）
     'a'：追加模式
-    'x'：创建并写入模式
     'b'：二进制模式
-    't'：文本模式
     '+'：读写模式（与其他模式一起使用）
+    'x'：创建并写入模式
+    't'：文本模式
 
 文本文件的写入
     write(a) 把字符串 a 写入到文件中
@@ -24,7 +28,6 @@ python 中文件打开操作的mode中没有“rw”
         当调用 close()方法时，首先会把缓冲区数据写入文件(也可以直接调用 flush()方法)，再关闭文件，释放文件对象。
     flush()
 
-
 文本文件的读取
     文件的读取一般使用如下三个方法：
     read([size]) 从文件中读取 size 个字符，并作为结果返回。如果没有 size 参数，则读取整个文件。读取到文件末尾，会返回空字符串。
@@ -32,7 +35,8 @@ python 中文件打开操作的mode中没有“rw”
     readlines() 文本文件中，每一行作为一个字符串存入列表中，返回该列表
     tell() ？？？
 
-with 是 Python 中的一个关键字，用于创建一个上下文管理器（Context Manager）。上下文管理器用于管理代码块的进入和退出，它可以确保资源在使用完毕后被正确地释放，无论代码块中是否发生了异常。
+with 上下文管理，更方便的实现释放资源的操作。
+是 Python 中的一个关键字，用于创建一个上下文管理器（Context Manager）。上下文管理器用于管理代码块的进入和退出，它可以确保资源在使用完毕后被正确地释放，无论代码块中是否发生了异常。
     使用 with 关键字可以更简洁、更安全地管理资源，比如文件操作、网络连接、数据库连接等。
    语法：
         with context_expression [as target]:
@@ -48,7 +52,10 @@ with 是 Python 中的一个关键字，用于创建一个上下文管理器（C
 #     print "写成功"
 
 try:
-    f2 = open(r"file2.txt", "w")
+    if not os.path.exists("file"):
+        os.makedirs("file")
+
+    f2 = open(r"./file/file2.txt", "w")
     s = "开始写\n换行1\n换行2"
     print(s)
     f2.write(s)
@@ -63,7 +70,7 @@ finally:
 with 使用
 """
 # 1. 文件操作：文件会在代码块结束后自动关闭
-with open('file.txt', 'r') as file:
+with open('api2.txt', 'r') as file:
     content = file.read()
 
 # 2. 数据库连接：数据库连接会在代码块结束后自动关闭

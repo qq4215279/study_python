@@ -143,10 +143,20 @@ class Employee:
     __company = "hario game"
     salary = 0
 
+    """
+    初始化创建好的对象，初始化指的是：“给实例属性赋值”
+    """
     def __init__(self, name, age):
         self.name = name
         # 私有实例属性
         self.__age = age
+
+    """
+    用于返回一个对于“对象的描述”，对应于内置函数 str() 经常用于 print()方法，帮助我们查看对象的信息。`__str__()`可以重写。
+    """
+    def __str__(self):
+        return f"名字是：{self.name},年龄是：{self.__age}"
+
 
     def say_company(self):
         print("我的公司是：", Employee.__company) # 类内部可以直接访问私有属性

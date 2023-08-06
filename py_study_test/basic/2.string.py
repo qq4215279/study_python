@@ -86,11 +86,13 @@ print(str1)
 print(str2)
 print(str2[1])
 
+
 # 字符串切片slice操作
 def sliceTest():
     print("abcdefghijklmnopqrstuvwxyz"[-3:])  # 倒数三个 xyz
     print("abcdefghijklmnopqrstuvwxyz"[-8:-3])  # 倒数第八个到倒数第三个(包头不包尾) stuvw
     print("abcdefghijklmnopqrstuvwxyz"[::-1])  # 步长为负，从右到左反向提取 zyxwvutsrqponmlkjihgfedcba
+
 
 sliceTest()
 
@@ -128,8 +130,6 @@ sio.write('g')  # 将 x 变为 g
 value = sio.getvalue()
 print("value2: " + value)  # hello,sgt
 
-
-
 """
 二、格式化字符串：str.format() 基本语法是通过 {} 和 : 来代替以前的 % 。format 函数可以接受不限个参数，位置可以不按顺序。eg:
     - 填充与对齐：填充常跟对齐一起使用
@@ -139,6 +139,8 @@ print("value2: " + value)  # hello,sgt
     - 可变字符串：在 Python 中，字符串属于不可变对象，不支持原地修改，如果需要修改其中的值，智能创建新的字符串对象。但是，经常我们确实需要原地修改字符串，
         可以使用 io.StringIO 对象或 array 模块。
 """
+
+
 def formatStrTest():
     # 1. 在字符串中使用占位符 {} 来指示要插入的位置。然后，通过 format() 方法将值传递给这些占位符，以替换它们
     name = "Alice"
@@ -177,9 +179,10 @@ def formatStrTest():
     print("{:*<10}".format("Mike"))  # Mike******
     # 6.2.3 右对齐
     print("{:*>10}".format("Mike"))  # ******Mike
-    print("{:>8}".format("256"))   # "     256"
-formatStrTest()
+    print("{:>8}".format("256"))  # "     256"
 
+
+formatStrTest()
 
 """
 三、字符串编码和解码：
@@ -192,6 +195,8 @@ Python支持两种类型的字符串：Unicode字符串和字节字符串。
 
 创建字节(bytes)字符串:
 """
+
+
 def createBytesStr():
     # 1. bytes()
     bytesStr = bytes("Hello, World!", encoding='utf-8')
@@ -215,3 +220,30 @@ def createBytesStr():
 
 
 createBytesStr()
+
+"""
+四、特殊字符串
+1. 在字符串前面加上 r 表示原始字符串（Raw String），它的作用是告诉Python解释器不对字符串中的转义字符进行特殊处理，而是将字符串内容按照字面意义来使用。
+2. 在字符串前面加上 b ，表示生成字节字符串
+3. 在字符串前面加上 f ，表示对字符串进行格式化。
+"""
+
+
+def specialStr():
+    # 1. r""
+    normal_string = "Hello\nWorld"
+    print("normal_string: ", normal_string)
+    rStr = r"Hello\nWorld"
+    print("rStr: ", rStr)
+
+    # 2. b""
+    bStr = b"Hello World"
+    print("bStr type: ", type(bStr))  # bStr type:  <class 'bytes'>
+
+    # 3. f""
+    name = "lihua"
+    fStr = f"My name is {name}"
+    print("fStr: ", fStr)
+
+
+specialStr()

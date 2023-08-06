@@ -6,11 +6,11 @@ import tablib
 """
 将json字符串  ->  字段dict
 json.loads(json_string)  操作的是字符串。将JSON格式的字符串解析为Python数据结构
-json.load(file)   操作的是文件流。从JSON文件中读取数据并解析为Python数据结构。
+json.load(api2)   操作的是文件流。从JSON文件中读取数据并解析为Python数据结构。
 
 将字典dict  ->  json字符串
 json.dumps(dict, indent=None)：将Python数据结构转换为JSON格式的字符串。indent参数用于指定缩进级别，使生成的JSON更易读。
-json.dump(dict, file)：将Python数据结构写入到JSON文件中。
+json.dump(dict, api2)：将Python数据结构写入到JSON文件中。
     常用参数及其含义：
         obj（必需）：要转换为 JSON 的 Python 数据结构，通常是字典、列表等。
         skipkeys（可选）：如果设置为 True，则在转换过程中会跳过非字符串键的字典。默认为 False。
@@ -67,9 +67,9 @@ print(json_string)
 
 """
 3. 将文件里的json内容  -> 字段dict  
-json.load(file)
+json.load(api2)
 """
-with open(r'jsonFile.json', "r", encoding='utf-8') as jsonFile:
+with open(r'../api2/file/jsonFile.json', "r", encoding='utf-8') as jsonFile:
     # data = jsonFile.read().decode(encoding='utf-8').encode(encoding='utf-8')
     # res222 = json.loads(data)
     # print(res222)
@@ -82,9 +82,9 @@ with open(r'jsonFile.json', "r", encoding='utf-8') as jsonFile:
     print("3------->")
 """
 4. 将字典 ->  写入文件
-json.dump(obj, file)
+json.dump(obj, api2)
 """
 res2 = {"关键字2号": "123", "key2": "abc"}
-f4 = open('testjson2.json', mode='w', encoding='utf-8')  # 只写模式打开文件
+f4 = open('../api2/file/testjson2.json', mode='w', encoding='utf-8')  # 只写模式打开文件
 # 将字典直接通过dump转换成字典后写入文件对象f，不需要转换成字典赋值给对象，然后再调用f.write()写入文件。从而更加高效的实现了文件的写入
 json.dump(res2, f4, indent=4, ensure_ascii=False)
