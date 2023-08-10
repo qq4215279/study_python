@@ -5,7 +5,25 @@ import struct
 import time
 from io import StringIO
 from io import BytesIO
+import json
 
+# 协议名 与 协议id 字典
+name_protocol_id_dict = dict()
+#  协议id  与协议名 字典
+protocol_id_name_dict = dict()
+# 协议名 与 协议内容 字典
+protocol_schemas_dict = dict()
+
+def read_protocal():
+    with open(r"./my_protocal_name_to_id.json", "r", encoding='utf-8') as my_protocal_name_to_id:
+        global name_protocol_id_dict
+        name_protocol_id_dict = json.load(my_protocal_name_to_id)
+        global protocol_id_name_dict
+        protocol_id_name_dict = dict(zip(name_protocol_id_dict.values(), name_protocol_id_dict.keys()))
+
+    with open(r"./my_protocal_schemas.json", "r", encoding='utf-8') as my_protocol_id_name_dict:
+        global protocol_schemas_dict
+        protocol_schemas_dict = json.load(my_protocol_id_name_dict)
 
 class Client:
     def __init__(self, ip, port):
@@ -117,10 +135,45 @@ def decode_receves_msg():
     i1 = decode_bytes_2_int(b1)
     print(i1)
 
+
+
+
     # 2. messageId
-    b2 = stream.read(4)
-    i2 = decode_bytes_2_int(b2)
-    print(i2)
+    messageId = decode_bytes_2_int(stream.read(4))
+    print(messageId)
+    # 协议名
+    protocol_name = ""
+    if messageId in protocol_id_name_dict:
+        protocol_name = protocol_id_name_dict[messageId]
+
+    schemas = dict()
+    if protocol_name in protocol_schemas_dict:
+        schemas = protocol_schemas_dict[protocol_name]
+    print(schemas)
+
+    res = dict()
+
+    for schema in schemas:
+        field = schema['field']
+        type = schema['type']
+        print("filed: ", field)
+        print("type: ", type)
+
+        if type == 'int32':
+            byte_val = stream.read(4)
+            value = decode_bytes_2_int(byte_val)
+            res[field] = value
+        elif type == 'string':
+            strLen = stream.read(4)
+            strLen_byte_val = decode_bytes_2_int(strLen)
+
+            str_byte = stream.read(strLen_byte_val)
+            str = decode_bytes_2_str(str_byte)
+            print(str)
+
+            res[field] = value
+
+
 
     # 3. requestResult
     b3 = stream.read(4)
@@ -147,7 +200,9 @@ def decode_receves_msg():
 
 
 if __name__ == '__main__':
+    read_protocal()
     decode_receves_msg()
+
 
     # try:
     #     tcp_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -162,7 +217,7 @@ if __name__ == '__main__':
     #
     #     # TCP发送数据
     #
-    #     # 游客注册
+    #     # 游客注册 ReqRegisterTourist
     #     protocolId = 82775532
     #     # 心跳
     #     # protocolId = 45185077

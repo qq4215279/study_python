@@ -39,14 +39,13 @@ print("1------->")
 2. 字典 -> json字符串
 json.dumps(obj, indent=None)
 """
-res2 = {"关键字一号" : "123", "key2" : "abc"}
+res2 = {"关键字一号": "123", "key2": "abc"}
 res2_json = json.dumps(res2, indent=4, ensure_ascii=False)
 # res2_json = json.dumps(res2, indent=4, ensure_ascii=False).decode('utf8')
 
 print(res2_json)
 print(type(res2_json))
 print("2------->")
-
 
 complex_data = {
     "person": {
@@ -61,9 +60,6 @@ complex_data = {
 
 json_string = json.dumps(complex_data, indent=2)
 print(json_string)
-
-
-
 
 """
 3. 将文件里的json内容  -> 字段dict  
@@ -88,3 +84,31 @@ res2 = {"关键字2号": "123", "key2": "abc"}
 f4 = open('../api2/file/testjson2.json', mode='w', encoding='utf-8')  # 只写模式打开文件
 # 将字典直接通过dump转换成字典后写入文件对象f，不需要转换成字典赋值给对象，然后再调用f.write()写入文件。从而更加高效的实现了文件的写入
 json.dump(res2, f4, indent=4, ensure_ascii=False)
+
+"""
+反转字典的4种方法（字典的key和value对换）
+"""
+
+
+def reverseDict():
+    # 1. 字典推导式：
+    m = {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+    res = {v: k for k, v in m.items()}
+    print(res)
+
+    # 2. 使用压缩器:
+    mi = dict(zip(m.values(), m.keys()))
+    print(mi)
+
+    # 3. 遍历字典：
+    inverted_dict = {}
+    for key, value in m.items():
+        inverted_dict[value] = key
+    print(inverted_dict)
+
+    # 4. 结合函数map, reversed：
+    inverted_dict = dict(map(reversed, m.items()))
+    print(inverted_dict)
+
+
+reverseDict()
