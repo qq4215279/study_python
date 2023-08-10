@@ -30,7 +30,8 @@ string_io.write("This is a test string.\n")
 string_io.seek(0)
 
 # 4. 将StringIO对象的内容读取并输出
-print(string_io.read())
+print(string_io.read(5))
+print(string_io.read(5))
 
 # 5. 获取StringIO对象的全部内容  getvalue()
 print("全部内容：", string_io.getvalue())

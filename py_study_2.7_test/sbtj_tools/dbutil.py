@@ -35,9 +35,9 @@ class DBUtil:
 
     def _init(self):
         try:
-            self.db = MySQLdb.connect(host=self.args['host'], user=self.args['user'],
-                                      passwd=self.args['passwd'], db=self.args['db'],
-                                      charset="utf8")
+            self.db = MySQLdb._connect(host=self.args['host'], user=self.args['user'],
+                                       passwd=self.args['passwd'], db=self.args['db'],
+                                       charset="utf8")
             self.db.query(TEST_SQL)
             r = self.db.store_result()  # 一次全部拉去 use_result() 一行一行拉取
             print(r.fetch_row())

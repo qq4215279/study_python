@@ -5,7 +5,7 @@ import zipfile
 
 # 【示例1】实现将文件夹所有内容压缩(使用 shutil 模块)
 # 将"电影/港台"文件夹下所有内容压缩到"音乐2"文件夹下生成电影.zip
-shutil.make_archive("音乐/电影", "zip", "file/电影/港台")
+shutil.make_archive("file/音乐/电影", "zip", "file/电影/港台")
 
 # 压缩:将指定的多个文件压缩到一个 zip 文件
 z = zipfile.ZipFile("file/a.zip", "w")
