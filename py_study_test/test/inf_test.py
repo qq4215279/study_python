@@ -12,10 +12,11 @@ protocol_id_name_dict = dict()
 # 协议名 与 协议内容 字典
 protocol_schemas_dict = dict()
 
-
 """
 客户端
 """
+
+
 class Client:
     def __init__(self, ip, port):
         self.ip = ip
@@ -34,19 +35,36 @@ class Client:
     def __is_connect(self):
         return self.socket is not None
 
+    """
+    发送消息
+    """
     def send_msg(self, protocol_name, params):
         if not self.__is_connect():
             raise RuntimeError("未连接上服务器！")
 
         self.socket.send(self.__encode_send_param(protocol_name, params))
 
+    """
+    发送消息 并接收
+    """
     def send_msg_and_receive(self, protocol_name, params):
         self.send_msg(protocol_name, params)
         return self.__receive()
 
     def __receive(self):
-        # TODO 读取的长度？
-        buf = self.socket.recv(2048)
+        # 读取报文的长度
+        buf = self.socket.recv(1024)
+
+        stream = BytesIO(buf)
+        stream.seek(0)
+        # 1. 总长度
+        totalLen = self.__read_int(4, stream) + 4
+        # print("totalLen: ", totalLen)
+
+        diff = totalLen - len(buf)
+        if diff > 0:
+            buf += self.socket.recv(diff)
+
         return self.__decode_receive_msg(buf)
 
     def close(self):
@@ -64,7 +82,7 @@ class Client:
             raise ValueError("请求协议不存在！")
 
         protocol_id = name_protocol_id_dict[protocol_name]
-        print("protocol_id: ", protocol_id)
+        # print("protocol_id: ", protocol_id)
 
         data = b""
         # 协议id
@@ -164,7 +182,7 @@ class Client:
         totalLen = self.__read_int(4, stream)
         # 2. messageId
         messageId = self.__read_int(4, stream)
-        print("总长度: ", totalLen, " messageId: ", messageId)
+        # print("总长度: ", totalLen, " messageId: ", messageId)
 
         # 协议名
         protocol_name = ""
@@ -177,7 +195,7 @@ class Client:
 
         res = self.__do_decode_receive_msg(stream, schemas)
 
-        print("res: ", res)
+        print(protocol_id_name_dict[messageId], ": ", res)
         return res
 
     # 解码返回消息
@@ -284,6 +302,8 @@ class Client:
 """
 读取协议
 """
+
+
 def read_protocal():
     # path = r"./"
     path = r"\\10.198.141.130\sgp_dev\\protocalGenSG\liuzhen\\"
@@ -296,6 +316,7 @@ def read_protocal():
     with open(path + "my_protocal_schemas.json", "r", encoding='utf-8') as my_protocol_id_name_dict:
         global protocol_schemas_dict
         protocol_schemas_dict = json.load(my_protocol_id_name_dict)
+
 
 if __name__ == '__main__':
     read_protocal()
@@ -310,9 +331,8 @@ if __name__ == '__main__':
     # {'requestResult': 1, 'errorTips': '', 'account': 'tr10071', 'password': '12345678', 'channel': 'test2', 'playerInfo': {'playerId': 10109, 'accountId': 10109, 'channel': 'test2', 'cellNo': '', 'type': 0, 'certificationStatus': 4294967295, 'nick': '用户10109', 'head': 'head_portrait_01', 'level': 1, 'exp': 0, 'vip': 0, 'vipExp': 0, 'gold': 200000, 'diamond': 0, 'lotteryPoint': 0, 'tickets': 0, 'maxCannonMultiple': 100, 'equipCannonMultiple': 0, 'chargeCumulative': 0, 'createTime': 1691739668893, 'lastLoginTime': 1691739668893, 'lastChargeTime': 0, 'banChatTime': 0, 'onlineTime': 0, 'currentCannonItemId': 7001, 'curBarbetteId': 11001, 'todayOnlineTime': 138, 'buffInfos': [], 'age': 0, 'hasInviter': False}}
     # 1. 登录
     client.send_msg_and_receive("ReqLoginAccount", ["tr10071", "12345678", "test2", "1.0.0"])
-
+    #  2. 获取战令信息
     client.send_msg_and_receive("ReqGetPlayerWarOrderInfo", [])
 
     time.sleep(5)
-
     client.close()
