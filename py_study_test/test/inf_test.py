@@ -14,6 +14,11 @@ protocol_id_name_dict = dict()
 # 协议名 与 协议内容 字典
 protocol_schemas_dict = dict()
 
+"""
+读取协议
+"""
+
+
 def read_protocal():
     with open(r"./my_protocal_name_to_id.json", "r", encoding='utf-8') as my_protocal_name_to_id:
         global name_protocol_id_dict
@@ -25,6 +30,12 @@ def read_protocal():
         global protocol_schemas_dict
         protocol_schemas_dict = json.load(my_protocol_id_name_dict)
 
+
+"""
+客户端
+"""
+
+
 class Client:
     def __init__(self, ip, port):
         self.ip = ip
@@ -34,113 +45,150 @@ class Client:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((self.ip, self.port))
 
-    """
-    建立连接
-    """
+        # 获取本地IP地址和端口号
+        local_ip, local_port = self.socket.getsockname()
+        print(f'Local IP: {local_ip}, Local Port: {local_port}')
+
     def _connect(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((self.ip, self.port))
 
-    """
-    是否连接成功
-    """
     def _is_connect(self):
         return self.socket is None
 
-    """
-    发送请求
-    """
+    def _sendMsg(self, protocol_name, params):
+        self.socket.send(encode_send_param(protocol_name, params))
 
-    def _sendMsg(self, data):
-        self.socket.send(get_send_bytes(data))
+    def _sendMsgAndReceive(self, protocol_name, params):
+        self.socket.send(encode_send_param(protocol_name, params))
+
+        buf = self.socket.recv(2048)
+        return decode_receive_msg(buf)
+
+    def _receive(self):
+        buf = self.socket.recv(2048)
+        return decode_receive_msg(buf)
+
+    def _close(self):
+        self.socket.close()
+        print("与服务器断开连接~")
+
 
 """
 获取发送字节数组
 """
-def get_send_bytes(strList):
-    """
-    # 游客注册
-    protocolId = 82775532
-    # 心跳
-    # protocolId = 45185077
-    # 获取战令信息
-    # protocolId = 59573340
 
-    protocolIdB = protocolId.to_bytes(4, "big")
-    # data = struct.pack("II", 4, 82775532)
 
-    # 内容
-    channelB = b"test2"
-    channelBLen = len(channelB)
-    channelBBLen = channelBLen.to_bytes(4, "big")
+def encode_send_param(protocol_name, params):
+    if not protocol_name.startswith("Req"):
+        raise ValueError("请求类型错误！")
+    if not protocol_name in protocol_schemas_dict:
+        raise ValueError("请求协议不存在！")
 
-    versionB = b"1.0.0"
-    versionBLen = len(versionB)
-    versionBBLen = versionBLen.to_bytes(4, "big")
-
-    shebeiB = b"te"
-    shebeiBLen = len(shebeiB)
-    shebeiBBLen = shebeiBLen.to_bytes(4, "big")
-
-    totalLen = 4 + (4 + channelBLen) + (4 + versionBLen)
-    # totalLen = 4 + (4 + channelBLen) + (4 + versionBLen) + (4 + shebeiBLen)
-    totalLenB = totalLen.to_bytes(4, "big")
-
-    finalData = totalLenB + protocolIdB + (channelBBLen + channelB) + (versionBBLen + versionB) + (
-                shebeiBBLen + shebeiB)
-    print("data: ", finalData)
-
-    """
+    protocol_id = name_protocol_id_dict[protocol_name]
+    print("protocol_id: ", protocol_id)
 
     data = b""
-    for i in strList:
-        if isinstance(i, bool):
-            intB = i.to_bytes(1, "big")
-            data = data + intB
-        if isinstance(i, int):
-            intB = encode_int_2_bytes(i)
-            data = data + intB
-        if isinstance(i, float):
-            intB = encode_int_2_bytes(i)
-            data = data + intB
-        if isinstance(i, str):
-            strB = i.encode(encoding='utf-8')
-            lenB = encode_int_2_bytes(len(strB))
-            data += lenB + strB
+    # 协议id
+    value = encode_int_2_bytes(4, protocol_id)
+    data += value
 
-    totalLen = encode_int_2_bytes(len(data))
+    i = 0
+    for schema in protocol_schemas_dict[protocol_name]:
+        type = schema["type"]
+        param = params[i]
+        i += 1
+        data += do_encode_send_param(type, param)
+
+    # 总长度
+    totalLen = encode_int_2_bytes(4, len(data))
     return totalLen + data
 
-def encode_int_2_bytes(i):
-    intB = i.to_bytes(4, "big")
+
+# do 获取发送字节数组
+def do_encode_send_param(type, param):
+    data = b""
+    if type.endswith("[]"):
+        type = type[:len(type) - 2]
+
+        # 数组长度
+        len = len(param)
+        lenB = encode_int_2_bytes(4, len)
+        data += lenB
+
+        for i in range(len):
+            data += encode_param(type, param)
+
+    else:
+        data += encode_param(type, param)
+
+    return data
+
+
+# 编码参数
+def encode_param(type, param):
+    if type == 'boolean':
+        flag = 0
+        if isinstance(param, bool):
+            flag = 1 if True else 0
+        if isinstance(param, str):
+            flag = 1 if param.islower() == "true" else 0
+
+        value = encode_int_2_bytes(1, flag)
+    if type == 'int8':
+        value = encode_int_2_bytes(1, param)
+    elif type == 'int16':
+        value = encode_int_2_bytes(2, param)
+    elif type == 'int32':
+        value = encode_int_2_bytes(4, param)
+    elif type == 'int64':
+        value = encode_int_2_bytes(8, param)
+    elif type == 'float':
+        value = encode_int_2_bytes(4, param)
+    elif type == 'double':
+        value = encode_int_2_bytes(8, param)
+    elif type == 'string':
+        value = encode_str_2_bytes(param)
+    return value
+
+
+# 编码 int 类型
+def encode_int_2_bytes(size, num):
+    if num is None:
+        num = 0
+
+    intB = num.to_bytes(size, "big")
     return intB
 
-def decode_bytes_2_int(byte_val):
-    return int.from_bytes(byte_val, "big")
 
-def decode_bytes_2_str(byte_val):
-    if byte_val is None or len(byte_val) <= 0:
-        return ""
-    return byte_val.decode(encoding='utf-8')
+# 编发 字符串类型
+def encode_str_2_bytes(str):
+    # 字符串为空
+    if str is None or len(str) <= 0:
+        return encode_int_2_bytes(0)
 
-def decode_receves_msg():
-    # data2: b'\x00\x00\x00\x1c\x04\xef\r\xec\x00\x00\x00\x05test2\x00\x00\x00\x051.0.0\x00\x00\x00\x02te'
-    # 接收到 % s的消息是 % s
-    buf = b"\x00\x00\x00\xeb\x05\xd6o\xc4\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x07tr10063\x00\x00\x00\x0812345678\x00\x00\x00\x05test2\x01\x00\x00\x00\x00\x00\x00'u\x00\x00\x00\x00\x00\x00'u\x00\x00\x00\x05test2\x00\x00\x00\x00\x00\xff\xff\xff\xff\x00\x00\x00\x0b\xe7\x94\xa8\xe6\x88\xb710101\x00\x00\x00\x10head_portrait_01\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\r@\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00d\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x89\xdfG.\xb7\x00\x00\x01\x89\xdfG.\xb7\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1bY\x00\x00*\xf9\x00\x00\x00\xc6\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    # 字符串
+    strB = str.encode(encoding='utf-8')
+    # 字符串长度
+    lenB = encode_int_2_bytes(4, len(strB))
+    return lenB + strB
+
+
+"""
+解码返回消息
+"""
+
+
+def decode_receive_msg(buf):
     stream = BytesIO(buf)
     stream.seek(0)
 
     # 1. 总长度
-    b1 = stream.read(4)
-    i1 = decode_bytes_2_int(b1)
-    print(i1)
-
-
-
-
+    totalLen = read_int(4, stream)
     # 2. messageId
-    messageId = decode_bytes_2_int(stream.read(4))
-    print(messageId)
+    messageId = read_int(4, stream)
+    print("总长度: ", totalLen, " messageId: ", messageId)
+
     # 协议名
     protocol_name = ""
     if messageId in protocol_id_name_dict:
@@ -149,107 +197,131 @@ def decode_receves_msg():
     schemas = dict()
     if protocol_name in protocol_schemas_dict:
         schemas = protocol_schemas_dict[protocol_name]
-    print(schemas)
 
+    res = do_decode_receive_msg(stream, schemas)
+
+    print("res: ", res)
+    return res
+
+
+# 解码返回消息
+def do_decode_receive_msg(stream, schemas):
     res = dict()
-
     for schema in schemas:
         field = schema['field']
         type = schema['type']
-        print("filed: ", field)
-        print("type: ", type)
 
-        if type == 'int32':
-            byte_val = stream.read(4)
-            value = decode_bytes_2_int(byte_val)
-            res[field] = value
-        elif type == 'string':
-            strLen = stream.read(4)
-            strLen_byte_val = decode_bytes_2_int(strLen)
+        decode_schemas(res, stream, field, type)
 
-            str_byte = stream.read(strLen_byte_val)
-            str = decode_bytes_2_str(str_byte)
-            print(str)
-
-            res[field] = value
+    return res
 
 
+# 解码协议
+def decode_schemas(res, stream, field, type):
+    # 是可选参数
+    if type.endswith("*"):
+        type = type[:len(type) - 1]
 
-    # 3. requestResult
-    b3 = stream.read(4)
-    i3 = decode_bytes_2_int(b3)
-    print(i3)
+        flag = True if 1 == read_int(1, stream) else False
+        # 传了
+        if flag:
+            res[field] = do_decode_schema(stream, type)
+        else:
+            # 赋个默认值！
+            if type.endswith("[]"):
+                res[field] = []
+            else:
+                res[field] = get_default_value(type)
+    else:
+        res[field] = do_decode_schema(stream, type)
 
-    # 3. errorTips
-    b41 = stream.read(4)
-    i41 = decode_bytes_2_int(b41)
-    print(i41)
 
-    b42 = stream.read(i41)
-    s1 = decode_bytes_2_str(b42)
-    print(s1)
+# do 解码具体协议
+def do_decode_schema(stream, type):
+    # 数组
+    if type.endswith("[]"):
+        type = type[:len(type) - 2]
 
-    # 4. account
-    b51 = stream.read(4)
-    i51 = decode_bytes_2_int(b51)
-    print(i51)
+        array = []
+        arr_size = read_int(4, stream)
+        for i in range(arr_size):
+            array.append(do_decode_value(stream, type))
 
-    b52 = stream.read(i51)
-    s2 = decode_bytes_2_str(b52)
-    print(s2)
+        return array
+    else:
+        return do_decode_value(stream, type)
+
+
+# 根据类型 解码值
+def do_decode_value(stream, type):
+    if type == 'boolean':
+        return True if 1 == read_int(1, stream) else False
+    if type == 'int8':
+        return read_int(1, stream)
+    if type == 'int16':
+        return read_int(2, stream)
+    if type == 'int32':
+        return read_int(4, stream)
+    if type == 'int64':
+        return read_int(8, stream)
+    if type == 'float':
+        byte_val = stream.read(4)
+        return int.from_bytes(byte_val, "big")
+    elif type == 'string':
+        return decode_bytes_2_str(stream)
+    else:
+        schemas = protocol_schemas_dict[type]
+        return do_decode_receive_msg(stream, schemas)
+
+
+# 获取默认值
+def get_default_value(type):
+    if type == 'boolean':
+        return False
+    if type == 'int8':
+        return 0
+    if type == 'int16':
+        return 0
+    if type == 'int32':
+        return 0
+    if type == 'int64':
+        return 0
+    if type == 'float':
+        return 0
+    elif type == 'string':
+        return ""
+    else:
+        return dict()
+
+
+# 读 int 类型
+def read_int(read_size, stream):
+    byte_val = stream.read(read_size)
+    value = int.from_bytes(byte_val, "big")
+    return value
+
+
+# 读 string 类型
+def decode_bytes_2_str(stream):
+    str_len = read_int(4, stream)
+    str_byte = stream.read(str_len)
+
+    if str_byte is None or len(str_byte) <= 0:
+        return ""
+    return str_byte.decode(encoding='utf-8')
 
 
 if __name__ == '__main__':
     read_protocal()
-    decode_receves_msg()
 
+    ip = "127.0.0.1"
+    port = 9310
+    client = Client(ip, port)
 
-    # try:
-    #     tcp_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #
-    #     ip = "127.0.0.1"
-    #     port = 9310
-    #     tcp_client_socket.connect((ip, port))
-    #
-    #     # 获取本地IP地址和端口号
-    #     local_ip, local_port = tcp_client_socket.getsockname()
-    #     print(f'Local IP: {local_ip}, Local Port: {local_port}')
-    #
-    #     # TCP发送数据
-    #
-    #     # 游客注册 ReqRegisterTourist
-    #     protocolId = 82775532
-    #     # 心跳
-    #     # protocolId = 45185077
-    #     # 获取战令信息
-    #     # protocolId = 59573340
-    #
-    #     finalData2 = get_send_bytes((82775532, "test2", "1.0.0", "te"))
-    #     print("data2: ", finalData2)
-    #
-    #     if tcp_client_socket is not None:
-    #         tcp_client_socket.send(finalData2)
-    #
-    #
-    #     # TCP接收数据 表示本次接收的最大字节数1024
-    #     recv_data = tcp_client_socket.recv(1024)
-    #     print('接收到%s的消息是%s', recv_data)
-    #     # print('接收到%s的消息是%s' % (recv_data[1], recv_data[0].decode('utf-8')))
-    #     # print(recv_data.decode())
-    #
-    #     # 获取远程IP地址和端口号
-    #     remote_ip, remote_port = tcp_client_socket.getpeername()
-    #     print(f'Remote IP: {remote_ip}, Remote Port: {remote_port}')
-    #
-    #     time.sleep(10)
-    #
-    # except socket.error as e:
-    #     print(f'Socket error: {e}')
-    # except socket.timeout as e:
-    #     print(f'Socket timeout: {e}')
-    # except Exception as e:
-    #     print(f'Socket Exception: {e}')
-    # finally:
-    #     tcp_client_socket.close()
+    name = "ReqRegisterTourist"
+    params = ["test2", "1.0.0", "te"]
+    client._sendMsgAndReceive(name, params)
 
+    time.sleep(5)
 
+    client._close()
