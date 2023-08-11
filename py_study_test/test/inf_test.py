@@ -144,6 +144,9 @@ class Client:
             value = self.__encode_int_2_bytes(8, param)
         elif type == 'string':
             value = self.__encode_str_2_bytes(param)
+        elif type.endswith("{}"):
+            # TODO 完善！ {} 情况 eg: ReqGiveMeItems "type":"int64{}"
+            value = self.__encode_str_2_bytes(param)
         elif type.endswith("*"):
             # TODO 完善！ * 情况 eg: "type":"ThirdParty*"
             value = self.__encode_int_2_bytes(1, 0)
