@@ -1,9 +1,7 @@
 # encoding: utf-8
 
 import socket
-import struct
 import time
-from io import StringIO
 from io import BytesIO
 import json
 
@@ -96,7 +94,8 @@ def encode_send_param(protocol_name, params):
     i = 0
     for schema in protocol_schemas_dict[protocol_name]:
         type = schema["type"]
-        param = params[i]
+
+        param = params[i] if len(params) > i else None
         i += 1
         data += do_encode_send_param(type, param)
 
@@ -149,6 +148,10 @@ def encode_param(type, param):
         value = encode_int_2_bytes(8, param)
     elif type == 'string':
         value = encode_str_2_bytes(param)
+    elif type.endswith("*"):
+        # TODO 完善！ * 情况
+        value = encode_int_2_bytes(1, 0)
+
     return value
 
 
@@ -165,7 +168,7 @@ def encode_int_2_bytes(size, num):
 def encode_str_2_bytes(str):
     # 字符串为空
     if str is None or len(str) <= 0:
-        return encode_int_2_bytes(0)
+        return encode_int_2_bytes(4, 0)
 
     # 字符串
     strB = str.encode(encoding='utf-8')
@@ -318,9 +321,14 @@ if __name__ == '__main__':
     port = 9310
     client = Client(ip, port)
 
-    name = "ReqRegisterTourist"
-    params = ["test2", "1.0.0", "te"]
-    client._sendMsgAndReceive(name, params)
+    # {'requestResult': 1, 'errorTips': '', 'account': 'tr10071', 'password': '12345678', 'channel': 'test2', 'playerInfo': {'playerId': 10109, 'accountId': 10109, 'channel': 'test2', 'cellNo': '', 'type': 0, 'certificationStatus': 4294967295, 'nick': '用户10109', 'head': 'head_portrait_01', 'level': 1, 'exp': 0, 'vip': 0, 'vipExp': 0, 'gold': 200000, 'diamond': 0, 'lotteryPoint': 0, 'tickets': 0, 'maxCannonMultiple': 100, 'equipCannonMultiple': 0, 'chargeCumulative': 0, 'createTime': 1691739668893, 'lastLoginTime': 1691739668893, 'lastChargeTime': 0, 'banChatTime': 0, 'onlineTime': 0, 'currentCannonItemId': 7001, 'curBarbetteId': 11001, 'todayOnlineTime': 138, 'buffInfos': [], 'age': 0, 'hasInviter': False}}
+
+    # 1. 注册
+    client._sendMsgAndReceive("ReqRegisterTourist", ["test2", "1.0.0", "te"])
+
+    # 1. 登录
+    client._sendMsgAndReceive("ReqLoginAccount", ["tr10071", "12345678", "test2", "1.0.0"])
+
 
     time.sleep(5)
 
