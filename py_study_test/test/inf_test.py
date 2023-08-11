@@ -45,6 +45,7 @@ class Client:
         return self.__receive()
 
     def __receive(self):
+        # TODO 读取的长度？
         buf = self.socket.recv(2048)
         return self.__decode_receive_msg(buf)
 
@@ -309,6 +310,8 @@ if __name__ == '__main__':
     # {'requestResult': 1, 'errorTips': '', 'account': 'tr10071', 'password': '12345678', 'channel': 'test2', 'playerInfo': {'playerId': 10109, 'accountId': 10109, 'channel': 'test2', 'cellNo': '', 'type': 0, 'certificationStatus': 4294967295, 'nick': '用户10109', 'head': 'head_portrait_01', 'level': 1, 'exp': 0, 'vip': 0, 'vipExp': 0, 'gold': 200000, 'diamond': 0, 'lotteryPoint': 0, 'tickets': 0, 'maxCannonMultiple': 100, 'equipCannonMultiple': 0, 'chargeCumulative': 0, 'createTime': 1691739668893, 'lastLoginTime': 1691739668893, 'lastChargeTime': 0, 'banChatTime': 0, 'onlineTime': 0, 'currentCannonItemId': 7001, 'curBarbetteId': 11001, 'todayOnlineTime': 138, 'buffInfos': [], 'age': 0, 'hasInviter': False}}
     # 1. 登录
     client.send_msg_and_receive("ReqLoginAccount", ["tr10071", "12345678", "test2", "1.0.0"])
+
+    client.send_msg_and_receive("ReqGetPlayerWarOrderInfo", [])
 
     time.sleep(5)
 
