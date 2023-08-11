@@ -149,7 +149,7 @@ def encode_param(type, param):
     elif type == 'string':
         value = encode_str_2_bytes(param)
     elif type.endswith("*"):
-        # TODO 完善！ * 情况
+        # TODO 完善！ * 情况 eg: "type":"ThirdParty*"
         value = encode_int_2_bytes(1, 0)
 
     return value
