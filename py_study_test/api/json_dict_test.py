@@ -14,7 +14,7 @@ json.dump(dict, api2)：将Python数据结构写入到JSON文件中。
     常用参数及其含义：
         obj（必需）：要转换为 JSON 的 Python 数据结构，通常是字典、列表等。
         skipkeys（可选）：如果设置为 True，则在转换过程中会跳过非字符串键的字典。默认为 False。
-        ensure_ascii（可选）：如果设置为 True（默认值），则所有非 ASCII 字符将被转义为 Unicode 转义序列（比如 \uXXXX）。
+        ensure_ascii（可选）：如果设置为 True（默认值），则所有非 ASCII 字符将被转义为 Unicode 转义序列（比如 \\uXXXX）。
         check_circular（可选）： 如果设置为 True，则会检测并防止循环引用（对象之间相互引用）。默认为 True。
         allow_nan（可选）：如果设置为 True，则允许将 NaN、Infinity 和 -Infinity 作为 JSON 中的数字值。默认为 True。
         cls（可选）：一个定制的 JSONEncoder 子类，用于控制 JSON 格式化过程。默认为 None。

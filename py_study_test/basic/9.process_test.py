@@ -14,7 +14,7 @@ import time
 
 api：
     process.is_alive()  如果p仍然运行，返回True
-    process.join([timeout])  等待进程p终止。Timeout是可选的超时期限，进程可以被链接无数次，但如果连接自身则会出错
+    process.join([timeout])  等待进程process终止。timeout是可选的超时期限，进程可以被链接无数次，但如果连接自身则会出错
     process.run()  进程启动时运行的方法。默认情况下，会调用传递给Process构造函数的target。定义进程的另一种方法是继承Process类并重新实现run()函数
     process.start()	 启动进程，这将运行代表进程的子进程，并调用该子进程中的run()函数
     process.terminate() 	强制终止进程。如果调用此函数，进程p将被立即终止，同时不会进行任何清理动作。如果进程p创建了它自己的子进程，这些进程将变为僵尸进程。使用此方法时需要特别小心。如果p保存了一个锁或参与了进程间通信，那么终止它可能会导致死锁或I/O损坏
@@ -28,15 +28,16 @@ api：
 Pool可以提供指定数量的进程，供用户调用，当有新的请求提交到pool中时，如果池还没有满，那么就会创建一个新的进程用来执行该请求；
 但如果池中的进程数已经达到规定最大值，那么该请求就会等待，直到池中有进程结束，才会创建新的进程。
 进程池创建  pool = Pool([numprocess [, initializer [, initargs]]]) 
-    其中: numprocess 是要创建的进程数,如果省略此参数，将使用cpu_count()的值；Initializer 是每个工作进程启动时要执行的可调用对象；
-         Initargs 是要传递给initializer的参数元祖，Initializer默认为None。
+    其中: numprocess 是要创建的进程数,如果省略此参数，将使用cpu_count()的值；numprocess 是每个工作进程启动时要执行的可调用对象；
+         initargs 是要传递给initializer的参数元祖，initializer默认为None。
 
 api：
     apply(func [,args [,kwargs]])  在一个池工作进程中执行函数（*args，**kwargs），然后返回结果。阻塞！
     apply_async(func [, args [,kwargs [,callback ] ] ])  在一个池工作进程中异步地执行函数（*args，**kwargs），然后返回结果。
-            此方法的结果是AsyncResult类的实例，稍后可用于获得最终结果。Callback是可调用对象，接受输入参数。当func的结果变为可用时，将立即传递给callback。
-            Callback禁止执行任何阻塞操作，否则将阻塞接收其他异步操作中的结果。非阻塞！
+            此方法的结果是AsyncResult类的实例，稍后可用于获得最终结果。callback是可调用对象，接受输入参数。当func的结果变为可用时，将立即传递给callback。
+            callback禁止执行任何阻塞操作，否则将阻塞接收其他异步操作中的结果。非阻塞！
     close()  关闭进程池，防止进行进一步操作。如果还有挂起的操作，它们将在工作进程终止之前完成
+    terminate()  立即终止所有工作进程，同时不执行任何清理或结束任何挂起工作。如果p被垃圾回收，将自动调用此函数
     join()  等待所有工作进程退出。此方法只能在close() 或者terminate() 方法之后调用
     imap(func, iterable [ ,chunksize])	map() 函数的版本之一，返回迭代器而非结果列表
     imap_unordered(func, iterable [, chunksize])  同 imap() 函数一样，只是结果的顺序根据从工作进程接收到的时间任意确定
@@ -44,7 +45,6 @@ api：
             chunksize指定每块中的项数。如果数量较大，可以增大chunksize的值来提升性能
     map_async(func, iterable [, chunksize [, callback]] )	同 map() 函数，但结果的返回是异步的。返回值是AsyncResult类的实例，稍后可用与获取结果。
             Callback是指接受一个参数的可调对象。如果提供callable，当结果变为可用时，将使用结果调用callable
-    terminate()  立即终止所有工作进程，同时不执行任何清理或结束任何挂起工作。如果p被垃圾回收，将自动调用此函数
     get([timeout])	返回结果，如果有必要则等待结果到达。Timeout是可选的超时。如果结果在指定时间内没有到达，将引发multiprocessing.TimeoutError异常。
             如果远程操作中引发了异常，它将在调用此方法时再次被引发
     ready()	如果调用完成，则返回True

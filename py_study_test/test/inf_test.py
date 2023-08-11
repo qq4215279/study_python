@@ -18,7 +18,7 @@ protocol_schemas_dict = dict()
 
 
 class Client:
-    def __init__(self, ip, port):
+    def __init__(self, ip="127.0.0.1", port="9310"):
         self.ip = ip
         self.port = port
         self.socket = None
@@ -38,7 +38,8 @@ class Client:
     """
     发送消息
     """
-    def send_msg(self, protocol_name, params):
+
+    def send_msg(self, protocol_name="", params=[]):
         if not self.__is_connect():
             raise RuntimeError("未连接上服务器！")
 
@@ -47,7 +48,8 @@ class Client:
     """
     发送消息 并接收
     """
-    def send_msg_and_receive(self, protocol_name, params):
+
+    def send_msg_and_receive(self, protocol_name="", params=[]):
         self.send_msg(protocol_name, params)
         return self.__receive()
 
@@ -75,7 +77,7 @@ class Client:
     获取发送字节数组
     """
 
-    def __encode_send_param(self, protocol_name, params):
+    def __encode_send_param(self, protocol_name="", params=[]):
         if not protocol_name.startswith("Req"):
             raise ValueError("请求类型错误！")
         if not protocol_name in protocol_schemas_dict:
@@ -162,7 +164,7 @@ class Client:
         return intB
 
     # 编发 字符串类型
-    def __encode_str_2_bytes(self, str):
+    def __encode_str_2_bytes(self, str=""):
         # 字符串为空
         if str is None or len(str) <= 0:
             return self.__encode_int_2_bytes(4, 0)
@@ -324,16 +326,20 @@ def read_protocal():
 if __name__ == '__main__':
     read_protocal()
 
-    ip = "127.0.0.1"
-    port = 9310
+    # 正式测试服2
+    ip = "121.196.110.34"
+    port = 9022
     client = Client(ip, port)
 
     # 1. 注册
     # client.send_msg_and_receive("ReqRegisterTourist", ["test2", "1.0.0", "te"])
 
+
     # {'requestResult': 1, 'errorTips': '', 'account': 'tr10071', 'password': '12345678', 'channel': 'test2', 'playerInfo': {'playerId': 10109, 'accountId': 10109, 'channel': 'test2', 'cellNo': '', 'type': 0, 'certificationStatus': 4294967295, 'nick': '用户10109', 'head': 'head_portrait_01', 'level': 1, 'exp': 0, 'vip': 0, 'vipExp': 0, 'gold': 200000, 'diamond': 0, 'lotteryPoint': 0, 'tickets': 0, 'maxCannonMultiple': 100, 'equipCannonMultiple': 0, 'chargeCumulative': 0, 'createTime': 1691739668893, 'lastLoginTime': 1691739668893, 'lastChargeTime': 0, 'banChatTime': 0, 'onlineTime': 0, 'currentCannonItemId': 7001, 'curBarbetteId': 11001, 'todayOnlineTime': 138, 'buffInfos': [], 'age': 0, 'hasInviter': False}}
-    # 1. 登录
-    client.send_msg_and_receive("ReqLoginAccount", ["tr10071", "12345678", "test2", "1.0.0"])
+    # 1. 登录  'tr10395', 'password': '12345678'
+    # client.send_msg_and_receive("ReqLoginAccount", ["tr10071", "12345678", "test2", "1.0.0"])
+    client.send_msg_and_receive("ReqLoginAccount", ["tr10395", "12345678", "test2", "1.0.0"])
+
     #  2. 获取战令信息
     client.send_msg_and_receive("ReqGetPlayerWarOrderInfo", [])
 

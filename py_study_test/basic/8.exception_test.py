@@ -18,7 +18,11 @@ import os
 
 自定义异常类
 自定义异常类一般都是运行时异常，通常继承 Exception 或其子类即可。命名一般以 Error、Exception 为后缀。
+
+raise 是用于引发异常的关键字。
 自定义异常由 raise 语句主动抛出。
+eg: if b == 0:
+        raise BaseException("主动抛个异常！")
 
 
 trackback 模块

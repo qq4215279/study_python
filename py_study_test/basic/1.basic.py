@@ -46,7 +46,7 @@ print(obj): 直接打印出值。
     生成器类型 (generator)：表示生成器对象，用于生成迭代序列的值。
 
 type() 查看任意对象的类型，例如：type(42) 返回 <class 'int'>。
-isinstance() 判断一个对象是否属于指定的类型。接受两个参数：要检查的对象和要检查的类型，如果对象是指定类型的实例，则返回 True，否则返回 False。
+isinstance(obj, type) 判断一个对象是否属于指定的类型。接受两个参数：要检查的对象和要检查的类型，如果对象是指定类型的实例，则返回 True，否则返回 False。
 '''
 print(id(2))  # 1440458688
 print(type(2))  # <class 'int'>
