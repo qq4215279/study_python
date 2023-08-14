@@ -4,6 +4,7 @@ import socket
 import time
 from io import BytesIO
 import json
+import threading
 
 # 协议名 与 协议id 字典
 name_protocol_id_dict = dict()
@@ -12,21 +13,180 @@ protocol_id_name_dict = dict()
 # 协议名 与 协议内容 字典
 protocol_schemas_dict = dict()
 
+lock = threading.Lock()
+
+
+def read_player(name):
+    need_create_player = True
+    dict = {}
+    try:
+        lock.acquire()
+
+        lines = read_lines(name)
+        with open(r"./config/" + name + "players", "w", encoding='utf-8') as file:
+            for json_str in lines:
+                # 创角
+                if len(json_str) <= 0 or json_str.find("\"isUsed\": 1") != -1 or not need_create_player:
+                    file.write(json_str)
+                else:
+                    read_dict = json.loads(json_str)
+                    read_dict["isUsed"] = 1
+
+                    file.write(json.dumps(read_dict))
+
+                    need_create_player = False
+                    dict = read_dict
+
+                file.write("\n")
+
+    except BaseException:
+         pass
+    finally:
+        lock.release()
+        return need_create_player, dict
+
+
+def write_player(name, dict={}):
+    try:
+        lock.acquire()
+
+        lines = read_lines(name)
+        with open(r"./config/" + name + "players", "w", encoding='utf-8') as file:
+
+
+            account = dict["account"]
+            if len(lines) <= 0:
+                file.write(json.dumps(dict))
+            else:
+                for line in lines:
+                    if line.find(account) != -1:
+                        file.write(json.dumps(dict))
+                    else:
+                        file.write(line)
+
+                    file.write("\n")
+
+    except BaseException:
+        pass
+
+    finally:
+        lock.release()
+
+def re_write(name, account=""):
+    try:
+        lock.acquire()
+
+        lines = read_lines(name)
+        with open(r"./config/" + name + "players", "w", encoding='utf-8') as file:
+
+
+            for line in lines:
+                if line.find(account) != -1:
+                    dict = json.loads(line)
+                    dict["isUsed"] = 0
+
+                    file.write(json.dumps(dict))
+                else:
+                    file.write(line)
+
+                file.write("\n")
+
+    except BaseException:
+        pass
+
+    finally:
+        lock.release()
+
+
+def read_lines(name):
+    lines = []
+    with open(r"./config/" + name + "players", "r", encoding='utf-8') as file:
+        try:
+            # lock.acquire()
+            lines = file.readlines()
+        except BaseException:
+            pass
+
+        finally:
+            pass
+            # lock.release()
+    return lines
+
+
+class Task(threading.Thread):
+    def __init__(self, ip="127.0.0.1", port=9310, name="", is_create_player=False):
+        threading.Thread.__init__(self)
+
+        self.ip = ip
+        self.port = port
+        self.name = name
+        # 是否创角
+        self.is_create_player = is_create_player
+        # 命令
+        self.commands = []
+
+        # 连接客户端
+        self.client = Client(ip, port)
+
+        res = read_player(self.name)
+        need_create_player = res[0]
+        dict = res[1]
+        # 登录
+        if not need_create_player:
+            self.account = dict["account"]
+            self.password = dict["password"]
+            self.client.send_msg_and_receive("ReqLoginAccount", [self.account, self.password, dict["channel"], "1.0.0"])
+        else:
+            # 注册
+            receive_dict = self.client.send_msg_and_receive("ReqRegisterTourist", ["test2", "1.0.0", "test22"])
+            write_dict = {"isUsed": 1, "account": receive_dict['account'], "password": receive_dict['password'],
+                          "channel": receive_dict['channel']}
+            write_player(self.name, write_dict)
+
+            self.account = write_dict["account"]
+            self.password = write_dict["password"]
+            # 登录
+            self.client.send_msg_and_receive("ReqLoginAccount", [self.account, self.password, write_dict["channel"], "1.0.0"])
+
+
+    def run(self):
+        for protocol_name, params in self.commands:
+            self.send_msg_and_receive(protocol_name, params)
+
+        self.close()
+
+    def add_command(self, protocol_name="", params=[]):
+        self.commands.append((protocol_name, params))
+
+    def send_msg_and_receive(self, protocol_name="", params=[]):
+        return self.client.send_msg_and_receive(protocol_name, params)
+
+    def close(self):
+        try:
+            time.sleep(3)
+            self.client.close()
+        except:
+            print("close client error!")
+            pass
+        finally:
+            re_write(self.name)
+
+
 """
 客户端
 """
 
 
 class Client:
-    def __init__(self, ip="127.0.0.1", port="9310"):
+    def __init__(self, ip="127.0.0.1", port=9310):
         self.ip = ip
         self.port = port
         self.socket = None
 
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect((self.ip, self.port))
-
         self.__connect()
+
+        if not self.__is_connect():
+            raise BaseException("连接不上服务器！")
 
     def __connect(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -127,7 +287,7 @@ class Client:
         if type == 'boolean':
             flag = 0
             if isinstance(param, bool):
-                flag = 1 if True else 0
+                flag = 1 if param else 0
             if isinstance(param, str):
                 flag = 1 if param.islower() == "true" else 0
 
@@ -200,7 +360,11 @@ class Client:
 
         res = self.__do_decode_receive_msg(stream, schemas)
 
-        print(protocol_id_name_dict[messageId], ": ", res)
+        protocol_name = ": "
+        if messageId in protocol_id_name_dict:
+            protocol_name = protocol_id_name_dict[messageId] + protocol_name
+        print(protocol_name, res)
+
         return res
 
     # 解码返回消息
@@ -326,22 +490,18 @@ def read_protocal():
 if __name__ == '__main__':
     read_protocal()
 
+    # 本地
+    task = Task()
     # 正式测试服2
-    ip = "121.196.110.34"
-    port = 9022
-    client = Client(ip, port)
-
-    # 1. 注册
-    # client.send_msg_and_receive("ReqRegisterTourist", ["test2", "1.0.0", "te"])
+    # task = Task("121.196.110.34", 9022, "game2", False)
 
 
-    # {'requestResult': 1, 'errorTips': '', 'account': 'tr10071', 'password': '12345678', 'channel': 'test2', 'playerInfo': {'playerId': 10109, 'accountId': 10109, 'channel': 'test2', 'cellNo': '', 'type': 0, 'certificationStatus': 4294967295, 'nick': '用户10109', 'head': 'head_portrait_01', 'level': 1, 'exp': 0, 'vip': 0, 'vipExp': 0, 'gold': 200000, 'diamond': 0, 'lotteryPoint': 0, 'tickets': 0, 'maxCannonMultiple': 100, 'equipCannonMultiple': 0, 'chargeCumulative': 0, 'createTime': 1691739668893, 'lastLoginTime': 1691739668893, 'lastChargeTime': 0, 'banChatTime': 0, 'onlineTime': 0, 'currentCannonItemId': 7001, 'curBarbetteId': 11001, 'todayOnlineTime': 138, 'buffInfos': [], 'age': 0, 'hasInviter': False}}
-    # 1. 登录  'tr10395', 'password': '12345678'
-    # client.send_msg_and_receive("ReqLoginAccount", ["tr10071", "12345678", "test2", "1.0.0"])
-    client.send_msg_and_receive("ReqLoginAccount", ["tr10395", "12345678", "test2", "1.0.0"])
+    # 获取战令信息
+    task.add_command("ReqGetPlayerWarOrderInfo", [])
 
-    #  2. 获取战令信息
-    client.send_msg_and_receive("ReqGetPlayerWarOrderInfo", [])
+    # 刷新配置表  0: 服务器类型 1: 所有服务器; 3: hall; 4: game; 5: player; 6: platform    1:
+    task.add_command("ReqRefreshConfigTable", [6, False])
 
-    time.sleep(5)
-    client.close()
+    task.add_command("ReqFunctionStatus", [500000])
+
+    task.start()
