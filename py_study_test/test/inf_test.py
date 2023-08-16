@@ -1,17 +1,27 @@
 # encoding: utf-8
 
+import api_test_helper as helper
+
 import socket
 import time
 from io import BytesIO
 import json
 import threading
 
+# 配置文件
+config_dict = helper.parse_config()
+
+# 协议
+protocal = helper.read_protocal(config_dict["protocal_ip"])
 # 协议名 与 协议id 字典
-name_protocol_id_dict = dict()
+name_protocol_id_dict = protocal[0]
 #  协议id  与协议名 字典
-protocol_id_name_dict = dict()
+protocol_id_name_dict = protocal[1]
 # 协议名 与 协议内容 字典
-protocol_schemas_dict = dict()
+protocol_schemas_dict = protocal[2]
+
+
+
 
 lock = threading.Lock()
 
@@ -39,8 +49,10 @@ def read_player(name):
 
                 file.write("\n")
 
-    except BaseException:
-         pass
+
+    except BaseException as e:
+
+        print(e)
     finally:
         lock.release()
         return need_create_player, dict
@@ -52,22 +64,15 @@ def write_player(name, dict={}):
 
         lines = read_lines(name)
         with open(r"./config/" + name + "players", "w", encoding='utf-8') as file:
-
-
-            account = dict["account"]
             if len(lines) <= 0:
                 file.write(json.dumps(dict))
             else:
-                for line in lines:
-                    if line.find(account) != -1:
-                        file.write(json.dumps(dict))
-                    else:
-                        file.write(line)
+                file.writelines(lines)
+                file.write(json.dumps(dict))
+            file.write("\n")
 
-                    file.write("\n")
-
-    except BaseException:
-        pass
+    except BaseException as e:
+        print(e)
 
     finally:
         lock.release()
@@ -91,9 +96,9 @@ def re_write(name, account=""):
 
                 file.write("\n")
 
-    except BaseException:
-        pass
+    except BaseException as e:
 
+        print(e)
     finally:
         lock.release()
 
@@ -104,9 +109,8 @@ def read_lines(name):
         try:
             # lock.acquire()
             lines = file.readlines()
-        except BaseException:
-            pass
-
+        except BaseException as e:
+            print(e)
         finally:
             pass
             # lock.release()
@@ -155,15 +159,15 @@ class Task(threading.Thread):
 
         self.close()
 
-    def add_command(self, protocol_name="", params=[]):
+    def add_command(self, protocol_name: str, params: list):
         self.commands.append((protocol_name, params))
 
-    def send_msg_and_receive(self, protocol_name="", params=[]):
+    def send_msg_and_receive(self, protocol_name: str, params: list):
         return self.client.send_msg_and_receive(protocol_name, params)
 
     def close(self):
         try:
-            time.sleep(3)
+            time.sleep(120)
             self.client.close()
         except:
             print("close client error!")
@@ -467,41 +471,39 @@ class Client:
             return ""
         return str_byte.decode(encoding='utf-8')
 
-
-"""
-读取协议
-"""
-
-
-def read_protocal():
-    # path = r"./"
-    path = r"\\10.198.141.130\sgp_dev\\protocalGenSG\liuzhen\\"
-    with open(path + "my_protocal_name_to_id.json", "r", encoding='utf-8') as my_protocal_name_to_id:
-        global name_protocol_id_dict
-        name_protocol_id_dict = json.load(my_protocal_name_to_id)
-        global protocol_id_name_dict
-        protocol_id_name_dict = dict(zip(name_protocol_id_dict.values(), name_protocol_id_dict.keys()))
-
-    with open(path + "my_protocal_schemas.json", "r", encoding='utf-8') as my_protocol_id_name_dict:
-        global protocol_schemas_dict
-        protocol_schemas_dict = json.load(my_protocol_id_name_dict)
-
-
 if __name__ == '__main__':
-    read_protocal()
-
     # 本地
-    task = Task()
-    # 正式测试服2
-    # task = Task("121.196.110.34", 9022, "game2", False)
+    task = Task(config_dict["ip"], config_dict["port"], config_dict["name"], config_dict["is_create_player"])
+
+    # 刷新配置表  0: 服务器类型 1: 所有服务器; 3: hall; 4: game; 5: player; 6: platform
+    task.add_command("ReqRefreshConfigTable", [1, False])
+    # task.add_command("ReqRefreshConfigTable", [1, True])
+
+    # 获取功能状态
+    # task.add_command("ReqFunctionStatus", [0])
 
 
-    # 获取战令信息
-    task.add_command("ReqGetPlayerWarOrderInfo", [])
+    # 1. 获取战令信息
+    # task.add_command("ReqGetPlayerWarOrderInfo", [])
+    # 2. 请求领取战令通行证奖励
+    # task.add_command("ReqGetWarOrderPassCardReward", [])
+    # 3. 请求获取夏日寻访信息
+    # task.add_command("ReqGetSummerTourInfo", [])
+    # 4. 请求寻访  寻访类型: 1: 阳光海滩; 2: 泳池派对    次数
+    # task.add_command("ReqDrawSummerTour", [1, 1])
+    # 5. 请求领取寻访额外奖励  寻访类型: 1: 阳光海滩; 2: 泳池派对   序列
+    # task.add_command("ReqGetSummerTourExtraReward", [1, 1])
+    # 6. 请求获取夏日探宝信息
+    # task.add_command("ReqGetSummerTreasureInfo", [])
+    # 7. 请求夏日探宝  探宝类型: 1: 免费; 2: 普通; 3: 高级   探宝次数
+    # task.add_command("ReqDrawSummerTreasure", [1, 1])
+    # 8. 请求领取夏日探宝累计任务奖励  需要累计探宝次数
+    # task.add_command("ReqGetTreasureCumulateTaskReward", [4])
+    # 9. 请求获取战令任务信息
+    # task.add_command("ReqGetWarOrderTaskInfo", [])
+    # 10. 请求领取战令任务奖励  任务id: >0: 具体任务; -1: 每日任务可领奖列表; -2: 每周任务可领奖列表; -3: 每期任务可领奖列表
+    # task.add_command("ReqGetWarOrderTaskReward", [-1])
 
-    # 刷新配置表  0: 服务器类型 1: 所有服务器; 3: hall; 4: game; 5: player; 6: platform    1:
-    task.add_command("ReqRefreshConfigTable", [6, False])
 
-    task.add_command("ReqFunctionStatus", [500000])
 
     task.start()

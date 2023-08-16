@@ -1,7 +1,5 @@
 # encoding: utf-8
 
-# import random
-
 """
 序列 - 2. 元组 tuple
 元组：元组是一种有序、不可变的数据结构，用于存储多个元素。

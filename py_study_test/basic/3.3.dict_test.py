@@ -1,7 +1,5 @@
 # encoding: utf-8
 
-# import random
-
 """
 3.3 字典 dict
 
