@@ -52,6 +52,7 @@ api:
     read_file(f)  从已打开的文件对象 f 中读取配置信息。
     sections()  返回配置文件中所有的节（sections）的名称。
     options(section)  返回指定节中所有配置项的名称。
+    add_section(section)  添加sections节
     get(section, option)  获取指定节中指定配置项的值。
     set(section, option, value)  设置指定节中指定配置项的值。
     write(fileobject)  将配置信息写入一个文件对象。
@@ -67,7 +68,7 @@ def configparser_test():
     config = configparser.ConfigParser()
 
     # 读取配置文件
-    config.read('./file/config.ini')
+    config.read('./file/config.ini', encoding='utf-8')
 
     # 遍历所有节
     for section in config.sections():
@@ -84,6 +85,10 @@ def configparser_test():
     # 修改配置项的值
     config.set('Section1', 'option2', 'new_value')
 
+    if not config.has_section("NewSection"):
+        config.add_section("NewSection")
+    config.set("NewSection", "newOption", "bbb")
+
 
     # 将修改后的配置写回文件
     with open('./file/config.ini', 'w') as configfile:
@@ -95,7 +100,7 @@ def configparser_test2():
     config = configparser.ConfigParser()
 
     # 使用 read_file() 方法读取配置文件
-    with open(r'./file/config.properties') as f:
+    with open(r'./file/config.properties', encoding='utf-8') as f:
         config.read_file(f)
 
     # 获取配置项的值
@@ -174,6 +179,33 @@ class MyClass:
         self.value = value
 
 
+"""
+编码 int 类型
+"""
+def encode_int_2_bytes(size, num):
+    if num is None:
+        num = 0
+
+    return num.to_bytes(size, "big")
+    # if num >= 0:
+    #     return num.to_bytes(size, "big")
+    # else:
+    #     return num.to_bytes(size, "big", True)
+
+"""
+读 int 类型
+int.from_bytes() 是 Python 内置的一个方法，用于将字节序列（bytes）转换为整数。这在处理二进制数据时非常有用，特别是在网络通信、文件读写等领域。
+该方法的使用方式是调用 int.from_bytes(bytes, byteorder, signed=False)，其中：
+    bytes 是要转换的字节序列。
+    byteorder 指定字节序列的字节顺序，可以是 'big'（大端序，高位在前）或 'little'（小端序，低位在前）。
+    signed 是一个可选参数，用于指定是否将结果解释为有符号整数。默认为 False，即将结果解释为无符号整数。
+"""
+def decode_bytes_2_int(read_size, stream):
+    byte_val = stream.read(read_size)
+    value = int.from_bytes(byte_val, "big")
+    return value
+
+import struct
 if __name__ == '__main__':
     # random_test()
 
@@ -181,6 +213,29 @@ if __name__ == '__main__':
     # configparser_test2()
 
     # inspect_test()
+    # create_obj()
 
-    create_obj()
+    size = 4
+    num = 100
+
+    bytesArr = struct.pack(">i", num)
+    # print(encode_int_2_bytes(size, num))
+    print("i: ", struct.pack("i", num))
+    print(">i: ", struct.pack(">i", num))
+
+    print("I: ", struct.pack("I", num))
+    print(">I: ", struct.pack(">I", num))
+    print(bin(100))
+
+    print("----------->")
+    print(">i: ", struct.unpack(">i", bytesArr))
+    print(">i: ", struct.unpack(">i", b"\x00\x00\x00\x00"))
+
+
+    print(">i: ", struct.unpack(">i", b'\x00\x00\x00\x00'))
+
+    print(">i: ", struct.unpack(">i", b'\x7f\xd2\x00\x00'))
+
+
+
 

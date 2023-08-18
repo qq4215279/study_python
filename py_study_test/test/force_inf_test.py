@@ -82,13 +82,15 @@ class ForceModule(threading.Thread):
     def __init__(self, ):
         threading.Thread.__init__(self)
         self.first = True
-        self.task = Task(config_dict["ip"], config_dict["port"], config_dict["name"], config_dict["is_create_player"])
+        self.task = Task(config_dict["ip"], config_dict["port"], config_dict["env"], config_dict["is_create_player"])
 
     def run(self):
-        self.before_test()
-        self.do_test()
+        while(True):
+            self.before_test()
+            self.do_test()
 
-        time.sleep(1)
+            print(threading.current_thread().getName(), " 休眠1s~")
+            time.sleep(1)
 
 
     def before_test(self):
@@ -98,6 +100,11 @@ class ForceModule(threading.Thread):
         self.first = False
 
         self._do_before_test()
+
+        # 开始任务
+        self.task.start()
+
+
 
     def _do_before_test(self):
         pass
@@ -144,7 +151,7 @@ class WarOrderForceModule(ForceModule):
         self.add_command("ReqDrawSummerTreasure", [random.randint(1, 3), random.randint(1, 100)])
 
         # 8. 请求领取夏日探宝累计任务奖励  需要累计探宝次数
-        # self.add_command("ReqGetTreasureCumulateTaskReward", [4])
+        self.add_command("ReqGetTreasureCumulateTaskReward", [4])
 
         # 9. 请求获取战令任务信息
         self.add_command("ReqGetWarOrderTaskInfo", [])
@@ -152,7 +159,13 @@ class WarOrderForceModule(ForceModule):
         self.add_command("ReqGetWarOrderTaskReward", [random.choice((-1, -2, -3))])
 
 
+import atexit
+def callback_function():
+    print("Callback function called.")
 if __name__ == '__main__':
     task = ForceTask()
 
     task.start()
+
+    # 注册回调函数
+    atexit.register(callback_function)

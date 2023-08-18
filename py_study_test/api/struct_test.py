@@ -9,11 +9,10 @@ struct模块通常用于处理与底层操作相关的二进制数据，例如�
 主要的struct模块函数包括：
 struct.pack(format, v1, v2, ...)：将指定的Python值按照指定的格式（format）打包为一个二进制字符串（bytes对象）。格式后面的值只能与格式一致，否则会引发struct.error。。
        format是一个字符串，用于指定打包的格式。v1, v2, ...是要打包的值。常用的格式字符如下：
+            ?: bool
+            c：字符
             b：有符号字节(char)
             B：无符号字节(unsigned char)
-            c：字符
-            d: 浮点数(double)
-            f：浮点数(float)
             h：短整数（short)
             H：无符号短整数(unsigned short)
             i：整数(int)
@@ -22,9 +21,10 @@ struct.pack(format, v1, v2, ...)：将指定的Python值按照指定的格式（
             L：无符号长整数(unsigned long)
             q：长长整数(long long)
             Q：无符号长长整数(unsigned long long)
+            f：浮点数(float)
+            d: 浮点数(double)
             s：字符串
             x: 填充字节
-            ?: bool
             
 struct.unpack(format, buffer)：根据指定的格式（format），从二进制字符串（buffer）中解析出相应的Python值，并以元组形式返回。
 struct.calcsize(format)：返回给定格式（format）的结构的大小，即打包后的字符串长度。

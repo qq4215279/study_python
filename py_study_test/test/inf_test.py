@@ -5,14 +5,14 @@ import api_test_helper as helper
 import socket
 import time
 from io import BytesIO
-import json
+import struct
 import threading
 
 # 配置文件
 config_dict = helper.parse_config()
 
 # 协议
-protocal = helper.read_protocal(config_dict["protocal_ip"])
+protocal = helper.read_protocal(config_dict["protocal_addr"])
 # 协议名 与 协议id 字典
 name_protocol_id_dict = protocal[0]
 #  协议id  与协议名 字典
@@ -20,160 +20,107 @@ protocol_id_name_dict = protocal[1]
 # 协议名 与 协议内容 字典
 protocol_schemas_dict = protocal[2]
 
-
-
-
-lock = threading.Lock()
-
-
-def read_player(name):
-    need_create_player = True
-    dict = {}
-    try:
-        lock.acquire()
-
-        lines = read_lines(name)
-        with open(r"./config/" + name + "players", "w", encoding='utf-8') as file:
-            for json_str in lines:
-                # 创角
-                if len(json_str) <= 0 or json_str.find("\"isUsed\": 1") != -1 or not need_create_player:
-                    file.write(json_str)
-                else:
-                    read_dict = json.loads(json_str)
-                    read_dict["isUsed"] = 1
-
-                    file.write(json.dumps(read_dict))
-
-                    need_create_player = False
-                    dict = read_dict
-
-                file.write("\n")
-
-
-    except BaseException as e:
-
-        print(e)
-    finally:
-        lock.release()
-        return need_create_player, dict
-
-
-def write_player(name, dict={}):
-    try:
-        lock.acquire()
-
-        lines = read_lines(name)
-        with open(r"./config/" + name + "players", "w", encoding='utf-8') as file:
-            if len(lines) <= 0:
-                file.write(json.dumps(dict))
-            else:
-                file.writelines(lines)
-                file.write(json.dumps(dict))
-            file.write("\n")
-
-    except BaseException as e:
-        print(e)
-
-    finally:
-        lock.release()
-
-def re_write(name, account=""):
-    try:
-        lock.acquire()
-
-        lines = read_lines(name)
-        with open(r"./config/" + name + "players", "w", encoding='utf-8') as file:
-
-
-            for line in lines:
-                if line.find(account) != -1:
-                    dict = json.loads(line)
-                    dict["isUsed"] = 0
-
-                    file.write(json.dumps(dict))
-                else:
-                    file.write(line)
-
-                file.write("\n")
-
-    except BaseException as e:
-
-        print(e)
-    finally:
-        lock.release()
-
-
-def read_lines(name):
-    lines = []
-    with open(r"./config/" + name + "players", "r", encoding='utf-8') as file:
-        try:
-            # lock.acquire()
-            lines = file.readlines()
-        except BaseException as e:
-            print(e)
-        finally:
-            pass
-            # lock.release()
-    return lines
+"""
+任务
+"""
 
 
 class Task(threading.Thread):
-    def __init__(self, ip="127.0.0.1", port=9310, name="", is_create_player=False):
+    def __init__(self, ip="127.0.0.1", port=9310, env="", is_create_player=False):
         threading.Thread.__init__(self)
 
         self.ip = ip
         self.port = port
-        self.name = name
+        self.env = env
         # 是否创角
         self.is_create_player = is_create_player
         # 命令
         self.commands = []
+        # 锁
+        self.lock = threading.Lock()
 
         # 连接客户端
         self.client = Client(ip, port)
 
-        res = read_player(self.name)
-        need_create_player = res[0]
-        dict = res[1]
-        # 登录
-        if not need_create_player:
-            self.account = dict["account"]
-            self.password = dict["password"]
-            self.client.send_msg_and_receive("ReqLoginAccount", [self.account, self.password, dict["channel"], "1.0.0"])
+        flag_player_dict = helper.find_player_account(self.env)
+        player_dict = flag_player_dict[1]
+
+        if not flag_player_dict[0]:
+            self.playerId = player_dict["playerId"]
+            self.account = player_dict["account"]
+            self.password = player_dict["password"]
+            self.client.send_msg_and_receive("ReqLoginAccount",
+                                             [self.account, self.password, player_dict["channel"], "1.0.0"])
         else:
             # 注册
             receive_dict = self.client.send_msg_and_receive("ReqRegisterTourist", ["test2", "1.0.0", "test22"])
             write_dict = {"isUsed": 1, "account": receive_dict['account'], "password": receive_dict['password'],
-                          "channel": receive_dict['channel']}
-            write_player(self.name, write_dict)
+                          "channel": receive_dict['channel'], "playerId": receive_dict['playerInfo']["playerId"]}
 
+            self.playerId = write_dict["playerId"]
             self.account = write_dict["account"]
             self.password = write_dict["password"]
             # 登录
-            self.client.send_msg_and_receive("ReqLoginAccount", [self.account, self.password, write_dict["channel"], "1.0.0"])
+            self.client.send_msg_and_receive("ReqLoginAccount",
+                                             [self.account, self.password, write_dict["channel"], "1.0.0"])
 
+            helper.add_player_account(self.env, self.playerId, write_dict)
 
     def run(self):
-        for protocol_name, params in self.commands:
-            self.send_msg_and_receive(protocol_name, params)
+        t = 0
+        while True:
+            try:
+                self.lock.acquire()
+                all_commands = self.commands[:]
+                self.commands.clear()
+            except RuntimeError as e:
+                print(e)
+            finally:
+                self.lock.release()
+
+            if len((all_commands)) <= 0:
+                # 超过3s没有任务，断开连接
+                if t >= 3:
+                    break
+                t += 1
+                time.sleep(1)
+                continue
+
+            t = 0
+            for protocol_name, params in all_commands:
+                self.send_msg_and_receive(protocol_name, params)
 
         self.close()
 
+    """
+    添加指令
+    """
+
     def add_command(self, protocol_name: str, params: list):
-        self.commands.append((protocol_name, params))
+        try:
+            self.lock.acquire()
+            self.commands.append((protocol_name, params))
+        except RuntimeError as e:
+            print(e)
+        finally:
+            self.lock.release()
+
+    """
+    发送指令且接受回复
+    """
 
     def send_msg_and_receive(self, protocol_name: str, params: list):
         return self.client.send_msg_and_receive(protocol_name, params)
 
     def close(self):
         try:
-            time.sleep(120)
+            time.sleep(3)
             self.client.close()
         except:
             print("close client error!")
             pass
         finally:
-            re_write(self.name)
+            helper.reback_player_account(self.env, self.playerId)
 
 
 """
@@ -199,10 +146,17 @@ class Client:
     def __is_connect(self):
         return self.socket is not None
 
+
+    """
+    发送消息 并接收
+    """
+    def send_msg_and_receive(self, protocol_name="", params=[]):
+        self.send_msg(protocol_name, params)
+        return self.__receive()
+
     """
     发送消息
     """
-
     def send_msg(self, protocol_name="", params=[]):
         if not self.__is_connect():
             raise RuntimeError("未连接上服务器！")
@@ -210,21 +164,17 @@ class Client:
         self.socket.send(self.__encode_send_param(protocol_name, params))
 
     """
-    发送消息 并接收
+    接受消息
     """
-
-    def send_msg_and_receive(self, protocol_name="", params=[]):
-        self.send_msg(protocol_name, params)
-        return self.__receive()
-
     def __receive(self):
         # 读取报文的长度
-        buf = self.socket.recv(1024)
+        buf = self.socket.recv(8)
 
         stream = BytesIO(buf)
         stream.seek(0)
         # 1. 总长度
-        totalLen = self.__read_int(4, stream) + 4
+        byte_val = stream.read(4)
+        totalLen = struct.unpack(">i", byte_val)[0] + 4
         # print("totalLen: ", totalLen)
 
         diff = totalLen - len(buf)
@@ -237,10 +187,7 @@ class Client:
         self.socket.close()
         print("与服务器断开连接~")
 
-    """
-    获取发送字节数组
-    """
-
+    # 获取发送字节数组
     def __encode_send_param(self, protocol_name="", params=[]):
         if not protocol_name.startswith("Req"):
             raise ValueError("请求类型错误！")
@@ -252,8 +199,7 @@ class Client:
 
         data = b""
         # 协议id
-        value = self.__encode_int_2_bytes(4, protocol_id)
-        data += value
+        data += struct.pack(">i", protocol_id)
 
         i = 0
         for schema in protocol_schemas_dict[protocol_name]:
@@ -264,7 +210,7 @@ class Client:
             data += self.__do_encode_send_param(type, param)
 
         # 总长度
-        totalLen = self.__encode_int_2_bytes(4, len(data))
+        totalLen = struct.pack(">i", len(data))
         return totalLen + data
 
     # do 获取发送字节数组
@@ -275,8 +221,7 @@ class Client:
 
             # 数组长度
             len = len(param)
-            lenB = self.__encode_int_2_bytes(4, len)
-            data += lenB
+            data += struct.pack(">i", len)
 
             for i in range(len):
                 data += self.__encode_param(type, param)
@@ -294,79 +239,77 @@ class Client:
                 flag = 1 if param else 0
             if isinstance(param, str):
                 flag = 1 if param.islower() == "true" else 0
-
-            value = self.__encode_int_2_bytes(1, flag)
+            value = struct.pack(">b", flag)
         if type == 'int8':
-            value = self.__encode_int_2_bytes(1, param)
+            value = struct.pack(">b", param)
         elif type == 'int16':
-            value = self.__encode_int_2_bytes(2, param)
+            value = struct.pack(">h", param)
         elif type == 'int32':
-            value = self.__encode_int_2_bytes(4, param)
+            value = struct.pack(">i", param)
         elif type == 'int64':
-            value = self.__encode_int_2_bytes(8, param)
+            value = struct.pack(">q", param)
         elif type == 'float':
-            value = self.__encode_int_2_bytes(4, param)
+            value = struct.pack(">f", param)
         elif type == 'double':
-            value = self.__encode_int_2_bytes(8, param)
+            value = struct.pack(">d", param)
         elif type == 'string':
             value = self.__encode_str_2_bytes(param)
         elif type.endswith("{}"):
-            # TODO 完善！ {} 情况 eg: ReqGiveMeItems "type":"int64{}"
-            value = self.__encode_str_2_bytes(param)
+            dict_data = b""
+            dict_data += struct.pack(">i", len(param))
+            param: dict
+            for key, value in param.items():
+                dict_data += self.__encode_str_2_bytes(key)
+                dict_data += struct.pack(">q", value)
+            value = dict_data
         elif type.endswith("*"):
             # TODO 完善！ * 情况 eg: "type":"ThirdParty*"
-            value = self.__encode_int_2_bytes(1, 0)
+            value = struct.pack(">b", 0)
 
         return value
 
-    # 编码 int 类型
-    def __encode_int_2_bytes(self, size, num):
-        if num is None:
-            num = 0
-
-        intB = num.to_bytes(size, "big")
-        return intB
-
-    # 编发 字符串类型
-    def __encode_str_2_bytes(self, str=""):
+    # 编码 字符串类型
+    @staticmethod
+    def __encode_str_2_bytes(string: str):
         # 字符串为空
-        if str is None or len(str) <= 0:
-            return self.__encode_int_2_bytes(4, 0)
+        if string is None or len(string) <= 0:
+            return struct.pack(">i", 0)
 
         # 字符串
-        strB = str.encode(encoding='utf-8')
+        strB = string.encode(encoding='utf-8')
         # 字符串长度
-        lenB = self.__encode_int_2_bytes(4, len(strB))
+        lenB = struct.pack(">i", len(strB))
         return lenB + strB
 
-    """
-    解码返回消息
-    """
-
+    # 解码返回消息
     def __decode_receive_msg(self, buf):
         stream = BytesIO(buf)
         stream.seek(0)
 
         # 1. 总长度
-        totalLen = self.__read_int(4, stream)
+        len_bytes = stream.read(4)
+        totalLen = struct.unpack(">i", len_bytes)[0]
         # 2. messageId
-        messageId = self.__read_int(4, stream)
+        byte_val = stream.read(4)
+        messageId = struct.unpack(">i", byte_val)[0]
         # print("总长度: ", totalLen, " messageId: ", messageId)
 
         # 协议名
         protocol_name = ""
         if messageId in protocol_id_name_dict:
             protocol_name = protocol_id_name_dict[messageId]
-
+        # 协议
         schemas = dict()
         if protocol_name in protocol_schemas_dict:
             schemas = protocol_schemas_dict[protocol_name]
 
+        # do 解码消息
         res = self.__do_decode_receive_msg(stream, schemas)
 
         protocol_name = ": "
         if messageId in protocol_id_name_dict:
             protocol_name = protocol_id_name_dict[messageId] + protocol_name
+        # 打印结果
         print(protocol_name, res)
 
         return res
@@ -388,9 +331,12 @@ class Client:
         if type.endswith("*"):
             type = type[:len(type) - 1]
 
-            flag = True if 1 == self.__read_int(1, stream) else False
+            byte_val = stream.read(1)
+            bool_value = struct.unpack(">b", byte_val)[0]
+
+            has_option = 1 == bool_value
             # 传了
-            if flag:
+            if has_option:
                 res[field] = self.__do_decode_schema(stream, type)
             else:
                 # 赋个默认值！
@@ -408,7 +354,9 @@ class Client:
             type = type[:len(type) - 2]
 
             array = []
-            arr_size = self.__read_int(4, stream)
+            byte_val = stream.read(4)
+            arr_size = struct.unpack(">i", byte_val)[0]
+
             for i in range(arr_size):
                 array.append(self.__do_decode_value(stream, type))
 
@@ -419,20 +367,27 @@ class Client:
     # 根据类型 解码值
     def __do_decode_value(self, stream, type):
         if type == 'boolean':
-            return True if 1 == self.__read_int(1, stream) else False
+            return 1 == struct.unpack(">b", stream.read(1))[0]
         if type == 'int8':
-            return self.__read_int(1, stream)
+            return struct.unpack(">b", stream.read(1))[0]
         if type == 'int16':
-            return self.__read_int(2, stream)
+            return struct.unpack(">h", stream.read(2))[0]
         if type == 'int32':
-            return self.__read_int(4, stream)
+            return struct.unpack(">i", stream.read(4))[0]
         if type == 'int64':
-            return self.__read_int(8, stream)
+            byte_val = stream.read(8)
+            if len((byte_val)) == 4:
+                return struct.unpack(">i", byte_val)[0]
+            return struct.unpack(">q", byte_val)[0]
         if type == 'float':
-            byte_val = stream.read(4)
-            return int.from_bytes(byte_val, "big")
+            return struct.unpack(">f", stream.read(4))[0]
         elif type == 'string':
-            return self.__decode_bytes_2_str(stream)
+            str_len = struct.unpack(">i", stream.read(4))[0]
+            str_byte = stream.read(str_len)
+
+            if str_byte is None or len(str_byte) <= 0:
+                return ""
+            return str_byte.decode(encoding='utf-8')
         else:
             schemas = protocol_schemas_dict[type]
             return self.__do_decode_receive_msg(stream, schemas)
@@ -441,50 +396,37 @@ class Client:
     def __get_default_value(self, type):
         if type == 'boolean':
             return False
-        if type == 'int8':
+        elif type == 'int8':
             return 0
-        if type == 'int16':
+        elif type == 'int16':
             return 0
-        if type == 'int32':
+        elif type == 'int32':
             return 0
-        if type == 'int64':
+        elif type == 'int64':
             return 0
-        if type == 'float':
-            return 0
+        elif type == 'float':
+            return 0.0
+        elif type == 'double':
+            return 0.0
         elif type == 'string':
             return ""
         else:
             return dict()
 
-    # 读 int 类型
-    def __read_int(self, read_size, stream):
-        byte_val = stream.read(read_size)
-        value = int.from_bytes(byte_val, "big")
-        return value
-
-    # 读 string 类型
-    def __decode_bytes_2_str(self, stream):
-        str_len = self.__read_int(4, stream)
-        str_byte = stream.read(str_len)
-
-        if str_byte is None or len(str_byte) <= 0:
-            return ""
-        return str_byte.decode(encoding='utf-8')
 
 if __name__ == '__main__':
     # 本地
-    task = Task(config_dict["ip"], config_dict["port"], config_dict["name"], config_dict["is_create_player"])
+    task = Task(config_dict["ip"], config_dict["port"], config_dict["env"], config_dict["is_create_player"])
 
     # 刷新配置表  0: 服务器类型 1: 所有服务器; 3: hall; 4: game; 5: player; 6: platform
-    task.add_command("ReqRefreshConfigTable", [1, False])
+    # task.add_command("ReqRefreshConfigTable", [1, False])
     # task.add_command("ReqRefreshConfigTable", [1, True])
 
     # 获取功能状态
-    # task.add_command("ReqFunctionStatus", [0])
-
+    # task.add_command("ReqFunctionStatus", [500500])
 
     # 1. 获取战令信息
-    # task.add_command("ReqGetPlayerWarOrderInfo", [])
+    task.add_command("ReqGetPlayerWarOrderInfo", [])
     # 2. 请求领取战令通行证奖励
     # task.add_command("ReqGetWarOrderPassCardReward", [])
     # 3. 请求获取夏日寻访信息
@@ -501,9 +443,12 @@ if __name__ == '__main__':
     # task.add_command("ReqGetTreasureCumulateTaskReward", [4])
     # 9. 请求获取战令任务信息
     # task.add_command("ReqGetWarOrderTaskInfo", [])
+
     # 10. 请求领取战令任务奖励  任务id: >0: 具体任务; -1: 每日任务可领奖列表; -2: 每周任务可领奖列表; -3: 每期任务可领奖列表
-    # task.add_command("ReqGetWarOrderTaskReward", [-1])
+    # task.add_command("ReqGetWarOrderTaskReward", [-1000])
 
-
+    # task.send_msg_and_receive("ReqFunctionStatus", [500000])
+    key = "qca5o036w3nwm3se5xuf0hqsbgj6184m==2jiicuucqcoxnihgr6ou24wmdf587yuv"
+    # task.send_msg_and_receive("ReqGiveMeItems", [{"1004": -1000}, key, 10125])
 
     task.start()
