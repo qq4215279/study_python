@@ -7,6 +7,7 @@ import time
 from io import BytesIO
 import struct
 import threading
+import queue
 
 # 配置文件
 config_dict = helper.parse_config()
@@ -26,25 +27,29 @@ protocol_schemas_dict = protocal[2]
 
 
 class Task(threading.Thread):
-    def __init__(self, ip="127.0.0.1", port=9310, env="", is_create_player=False):
+    def __init__(self, ip="127.0.0.1", port=9310, env="", is_create_player=False, callback=None):
         threading.Thread.__init__(self)
-
         self.ip = ip
         self.port = port
         self.env = env
         # 是否创角
         self.is_create_player = is_create_player
-        # 命令
-        self.commands = []
+
+        self.name_alltimes_dict = {}
+        # 连接客户端
+        self.client = Client(ip, port, self.name_alltimes_dict, callback)
+        self.__init()
+
         # 锁
         self.lock = threading.Lock()
+        # 命令
+        self.commands = []
 
-        # 连接客户端
-        self.client = Client(ip, port)
 
+    # 初始化
+    def __init(self):
         flag_player_dict = helper.find_player_account(self.env)
         player_dict = flag_player_dict[1]
-
         if not flag_player_dict[0]:
             self.playerId = player_dict["playerId"]
             self.account = player_dict["account"]
@@ -53,7 +58,7 @@ class Task(threading.Thread):
                                              [self.account, self.password, player_dict["channel"], "1.0.0"])
         else:
             # 注册
-            receive_dict = self.client.send_msg_and_receive("ReqRegisterTourist", ["test2", "1.0.0", "test22"])
+            receive_dict = self.client.send_msg_and_receive("ReqRegisterTourist", ["test2", "1.0.0", "test22"])[0][1]
             write_dict = {"isUsed": 1, "account": receive_dict['account'], "password": receive_dict['password'],
                           "channel": receive_dict['channel'], "playerId": receive_dict['playerInfo']["playerId"]}
 
@@ -66,7 +71,7 @@ class Task(threading.Thread):
 
             helper.add_player_account(self.env, self.playerId, write_dict)
 
-    def run(self):
+    def run(self) -> None:
         t = 0
         while True:
             try:
@@ -87,6 +92,7 @@ class Task(threading.Thread):
                 continue
 
             t = 0
+            # 发送请求
             for protocol_name, params in all_commands:
                 self.send_msg_and_receive(protocol_name, params)
 
@@ -95,7 +101,6 @@ class Task(threading.Thread):
     """
     添加指令
     """
-
     def add_command(self, protocol_name: str, params: list):
         try:
             self.lock.acquire()
@@ -108,14 +113,20 @@ class Task(threading.Thread):
     """
     发送指令且接受回复
     """
-
     def send_msg_and_receive(self, protocol_name: str, params: list):
         return self.client.send_msg_and_receive(protocol_name, params)
+
+    def send_msg(self, protocol_name: str, params: list):
+        return self.client.send_msg(protocol_name, params)
+
+    def receive(self):
+        return self.client.receive()
 
     def close(self):
         try:
             time.sleep(3)
             self.client.close()
+            print(self.name_alltimes_dict)
         except:
             print("close client error!")
             pass
@@ -123,16 +134,23 @@ class Task(threading.Thread):
             helper.reback_player_account(self.env, self.playerId)
 
 
+# 获取当前时间的毫秒值
+def getMilliseconds():
+    return int(time.time() * 1000)
+
 """
 客户端
 """
-
-
 class Client:
-    def __init__(self, ip="127.0.0.1", port=9310):
+    def __init__(self, ip="127.0.0.1", port=9310, name_alltimes_dict={}, callback=None):
         self.ip = ip
         self.port = port
-        self.socket = None
+        self.socket: socket.socket
+
+        self.name_alltimes_dict = name_alltimes_dict
+        self.queue = queue.Queue()
+        self.callback = callback
+
 
         self.__connect()
 
@@ -152,7 +170,7 @@ class Client:
     """
     def send_msg_and_receive(self, protocol_name="", params=[]):
         self.send_msg(protocol_name, params)
-        return self.__receive()
+        return self.receive()
 
     """
     发送消息
@@ -161,27 +179,76 @@ class Client:
         if not self.__is_connect():
             raise RuntimeError("未连接上服务器！")
 
+
+        # 记录发送时间
+        self.__set_name_alltimes_dict(protocol_name)
+
+        # 发送
         self.socket.send(self.__encode_send_param(protocol_name, params))
 
     """
     接受消息
     """
-    def __receive(self):
-        # 读取报文的长度
-        buf = self.socket.recv(8)
+    def receive(self):
+        if not self.__is_connect():
+            raise RuntimeError("未连接上服务器！")
 
-        stream = BytesIO(buf)
-        stream.seek(0)
-        # 1. 总长度
-        byte_val = stream.read(4)
-        totalLen = struct.unpack(">i", byte_val)[0] + 4
-        # print("totalLen: ", totalLen)
+        # 3s 超时
+        self.socket.settimeout(3)
 
-        diff = totalLen - len(buf)
-        if diff > 0:
-            buf += self.socket.recv(diff)
+        res = []
+        first = True
 
-        return self.__decode_receive_msg(buf)
+        while True:
+            try:
+                if first:
+                    first = False
+                else:
+                    self.socket.setblocking(0)
+
+                # 读取报文的长度
+                buf = self.socket.recv(8)
+                if not buf:
+                    return res
+
+                stream = BytesIO(buf)
+                stream.seek(0)
+                # 1. 总长度
+                byte_val = stream.read(4)
+                totalLen = struct.unpack(">i", byte_val)[0] + 4
+                # print("totalLen: ", totalLen)
+
+                diff = totalLen - len(buf)
+                if diff > 0:
+                    buf += self.socket.recv(diff)
+
+                receive_msg = self.__decode_receive_msg(buf)
+                res.append(receive_msg)
+
+                self.queue.put(receive_msg)
+
+                if not self.callback is None:
+                    self.callback(receive_msg[0], receive_msg[1])
+
+                # 记录接收时间
+                self.__set_name_alltimes_dict(receive_msg[0])
+
+            except socket.timeout as e:
+                print(f'Socket timeout: {e}')
+                break
+            except BlockingIOError as e:  # 如果没有数据了
+                self.socket.setblocking(1)
+                # 退出循环
+                break
+        return res
+
+    # 赋值 name_alltimes_dict
+    def __set_name_alltimes_dict(self, protocol_name):
+        alltimes = []
+        if protocol_name in self.name_alltimes_dict:
+            alltimes = self.name_alltimes_dict[protocol_name]
+        alltimes.append(getMilliseconds())
+        self.name_alltimes_dict[protocol_name] = alltimes
 
     def close(self):
         self.socket.close()
@@ -304,15 +371,15 @@ class Client:
             schemas = protocol_schemas_dict[protocol_name]
 
         # do 解码消息
-        res = self.__do_decode_receive_msg(stream, schemas)
+        receive_msg_dict = self.__do_decode_receive_msg(stream, schemas)
 
         protocol_name = ": "
         if messageId in protocol_id_name_dict:
             protocol_name = protocol_id_name_dict[messageId] + protocol_name
         # 打印结果
-        print(protocol_name, res)
+        print(protocol_name, receive_msg_dict)
 
-        return res
+        return protocol_name, receive_msg_dict
 
     # 解码返回消息
     def __do_decode_receive_msg(self, stream, schemas):
@@ -428,7 +495,7 @@ if __name__ == '__main__':
     # 1. 获取战令信息
     task.add_command("ReqGetPlayerWarOrderInfo", [])
     # 2. 请求领取战令通行证奖励
-    # task.add_command("ReqGetWarOrderPassCardReward", [])
+    task.add_command("ReqGetWarOrderPassCardReward", [])
     # 3. 请求获取夏日寻访信息
     # task.add_command("ReqGetSummerTourInfo", [])
     # 4. 请求寻访  寻访类型: 1: 阳光海滩; 2: 泳池派对    次数

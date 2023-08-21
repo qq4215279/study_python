@@ -5,6 +5,8 @@ import configparser
 import inspect
 # TODO traceback
 import traceback
+# TODO time
+import time
 
 """
 random 模块
@@ -236,6 +238,12 @@ if __name__ == '__main__':
 
     print(">i: ", struct.unpack(">i", b'\x7f\xd2\x00\x00'))
 
+    milliseconds = int(time.time())
+    print(milliseconds)
+
+    # 获取当前时间的毫秒值
+    milliseconds = int(time.time() * 1000)
+    print(milliseconds)
 
 
 

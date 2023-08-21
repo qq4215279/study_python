@@ -3,7 +3,7 @@ from socket import *
 # 创建客户端套接字对象
 client_socket = socket(AF_INET, SOCK_STREAM)
 # 调用connect方法与服务器建立连接
-client_socket.connect(('192.168.121.1', 8888))
+client_socket.connect(('127.0.0.1', 8888))
 while True:
     # 客户端发送消息
     msg = input('>')

@@ -1,12 +1,14 @@
 # encoding: utf-8
 
-from inf_test import Task, Client
 import api_test_helper as helper
+# from .inf_test import Task
+from inf_test import Task
 
 import random
 import threading
 import time
 import inspect
+import queue
 
 # 配置文件
 config_dict = helper.parse_config()
@@ -82,7 +84,8 @@ class ForceModule(threading.Thread):
     def __init__(self, ):
         threading.Thread.__init__(self)
         self.first = True
-        self.task = Task(config_dict["ip"], config_dict["port"], config_dict["env"], config_dict["is_create_player"])
+        self.queue = queue.Queue()
+        self.task = Task(config_dict["ip"], config_dict["port"], config_dict["env"], config_dict["is_create_player"], self.handle_receive)
 
     def run(self):
         while(True):
@@ -121,6 +124,12 @@ class ForceModule(threading.Thread):
     """
     def add_command(self, protocol_name: str, params: list):
         self.task.add_command(protocol_name, params)
+
+
+    def handle_receive(self, protocal_name: str, res: dict):
+        print("handle_receive....")
+        print(protocal_name, res)
+        pass
 
 '''
 战令压测模块
