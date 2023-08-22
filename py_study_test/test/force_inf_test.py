@@ -7,7 +7,6 @@ import random
 import threading
 import time
 import inspect
-import queue
 
 # 配置文件
 config_dict = helper.parse_config()
@@ -20,26 +19,39 @@ class ForceTask:
         self.force_time = config_dict["force_time"]
         self.is_record = config_dict["is_record"]
         self.player_count = config_dict["player_count"]
-        self.force_modules = config_dict["force_modules"]
-
+        self.startTime = time.time()
+        self.endTime = self.startTime + config_dict["force_time"]
+        # 记录信息
+        self.recordInfo = RecordInfo(self.startTime, self.endTime)
         self.forceModules = self.__init_force_modules()
 
     # 初始化所有压测模块
     def __init_force_modules(self):
         forceModules = []
 
-        for moduleName, num in self.force_modules.items():
+        # 指定数量
+        for moduleName, num in config_dict["force_modules"].items():
+            self.__record_dict(moduleName, num)
             for i in range(num):
                 forceModules.append(self.__create_obj(moduleName))
-
 
         need = max(self.player_count - len(forceModules), 0)
         test_modules = self.__get_test_modules()
         for i in range(need):
             moduleName = random.choice(test_modules)
             forceModules.append(self.__create_obj(moduleName))
+            self.__record_dict(moduleName, 1)
 
         return forceModules
+
+    # 记录模块分配情况
+    def __record_dict(self, moduleName, num):
+        total = 0
+
+        if moduleName in self.recordInfo.force_modules_record_dict:
+            total = self.recordInfo.force_modules_record_dict[moduleName]
+
+        self.recordInfo.force_modules_record_dict[moduleName] = total + num
 
     # 获取所有测试模块
     def __get_test_modules(self):
@@ -79,6 +91,113 @@ class ForceTask:
         for module_obj in self.forceModules:
             module_obj.start()
 
+    def stop(self):
+        # TODO
+        self.recordInfo.update_record()
+
+class InterfaceInfo:
+    def __init__(self, name: str):
+        # 协议名称
+        self.name = name
+        # 请求成功次数
+        self.success = 0
+        # 请求失败次数
+        self.fail = 0
+        # 最小请求时间
+        self.minTime = 0
+        # 最大请求时间
+        self.maxTime = 0
+        # 平均请求时间
+        self.avgTime = 0
+
+        self.lock = threading.Lock()
+
+    """
+    更新记录
+    """
+    def update_record(self, is_success: bool, access_time: int) -> None:
+        try:
+            self.lock.acquire()
+            if is_success:
+                self.minTime = min(self.minTime, access_time)
+                self.maxTime = max(self.maxTime, access_time)
+                self.avgTime = ((self.avgTime * self.success) + access_time) / (self.success + 1)
+                self.success += 1
+            else:
+                self.fail += 1
+        except RuntimeError as e:
+            print("update_record error...")
+        finally:
+            self.lock.release()
+
+
+class RecordInfo:
+    def __init__(self, startTime: int, endTime: int):
+        # 压测开始时间
+        self.startTime = startTime
+        # 压测结束时间
+        self.endTime = endTime
+        # 压测模块: 数量
+        self.force_modules_record_dict = {}
+        # 总请求次数
+        self.total = 0
+        # 请求失败总次数
+        self.fail = 0
+        # 失败协议: 总次数
+        self.fail_dict = {}
+        # 总平均请求时间
+        self.avgTime = 0
+        # 平均请求时间最长协议
+        self.maxAvgTimeName: str
+        # 平均请求最长时间
+        self.maxAvgTime = 0
+
+    def update_record(self, *interfaceList: InterfaceInfo):
+        # 总成功次数
+        success = 0
+        # 总请求消耗时间
+        total_time = 0
+
+        for info in interfaceList:
+            success += info.success
+            total_time += info.success * info.avgTime
+
+            self.fail += info.fail
+
+            fail = 0
+            if self.name in self.fail_dict:
+                fail = self.fail_dict[self.name]
+            self.fail_dict[self.name] = fail + info.fail
+
+            if info.avgTime > self.maxAvgTime:
+                self.maxAvgTimeName = info.name
+                self.maxAvgTime = info.avgTime
+
+        self.total = success + self.fail
+        self.maxAvgTime = total_time / success
+
+        # 写日志
+        self.__write_log()
+
+    # 写日志
+    def __write_log(self):
+        with open(r"./record.log", "w+", encoding='utf-8') as file:
+            file.writelines("本次压测结果汇总如下: \n")
+            t = self.startTime - self.endTime
+            file.writelines(f"压测开始时间：{self.startTime}, 压测结束时间：{self.endTime}, 总耗时：{t} \n")
+            file.writelines(f"压测模块有如下： \n")
+            str = ""
+            for key, value in self.force_modules_record_dict:
+                str += key + ", 玩家数：" + value + "; "
+            file.writelines(f"{str}\n")
+            file.writelines(f"总请求次数: {self.total}, 请求失败总次数: {self.fail} , 失败协议汇总如下: \n")
+            str = ""
+            for key, value in self.fail_dict:
+                str += key + ", 失败次数：" + value + "; "
+            file.writelines(f"{str}\n")
+            file.writelines(f"总平均请求时间: {self.maxAvgTimeName} \n")
+            file.writelines(f"平均请求时间最大协议: {self.maxAvgTimeName} , 平均请求最长时间为: {self.maxAvgTime} \n")
+            file.writelines("汇总结束 ------------------------------------------------------> \n")
 
 """
 压测模块
@@ -86,12 +205,16 @@ class ForceTask:
 class ForceModule(threading.Thread):
     def __init__(self, ):
         threading.Thread.__init__(self)
+        # 是否终止线程
+        self.stop = False
         self.first = True
-        self.queue = queue.Queue()
         self.task = Task(self.handle_receive)
 
     def run(self):
         while(True):
+            if self.stop:
+                break
+
             self.__before_test()
             self._do_test()
 
