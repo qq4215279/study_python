@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-import api_test_helper as helper
+import helper
 
 import socket
 import time
@@ -24,20 +24,18 @@ protocol_schemas_dict = protocal[2]
 """
 任务
 """
-
-
 class Task(threading.Thread):
-    def __init__(self, ip="127.0.0.1", port=9310, env="", is_create_player=False, callback=None):
+    def __init__(self, callback=None):
         threading.Thread.__init__(self)
-        self.ip = ip
-        self.port = port
-        self.env = env
+        self.ip = config_dict["ip"]
+        self.port = config_dict["port"]
+        self.env = config_dict["env"]
         # 是否创角
-        self.is_create_player = is_create_player
+        self.is_create_player = config_dict["is_create_player"] == 1
 
         self.name_alltimes_dict = {}
         # 连接客户端
-        self.client = Client(ip, port, self.name_alltimes_dict, callback)
+        self.client = Client(self.ip, self.port, self.name_alltimes_dict, callback)
         self.__init()
 
         # 锁
@@ -48,14 +46,17 @@ class Task(threading.Thread):
 
     # 初始化
     def __init(self):
-        flag_player_dict = helper.find_player_account(self.env)
-        player_dict = flag_player_dict[1]
-        if not flag_player_dict[0]:
-            self.playerId = player_dict["playerId"]
-            self.account = player_dict["account"]
-            self.password = player_dict["password"]
-            self.client.send_msg_and_receive("ReqLoginAccount",
-                                             [self.account, self.password, player_dict["channel"], "1.0.0"])
+        # 登录
+        if not self.is_create_player:
+            flag_player_dict = helper.find_player_account(self.env)
+            player_dict = flag_player_dict[1]
+
+            if flag_player_dict[0]:
+                self.playerId = player_dict["playerId"]
+                self.account = player_dict["account"]
+                self.password = player_dict["password"]
+                self.client.send_msg_and_receive("ReqLoginAccount",
+                                                 [self.account, self.password, player_dict["channel"], "1.0.0"])
         else:
             # 注册
             receive_dict = self.client.send_msg_and_receive("ReqRegisterTourist", ["test2", "1.0.0", "test22"])[0][1]
@@ -116,12 +117,9 @@ class Task(threading.Thread):
     def send_msg_and_receive(self, protocol_name: str, params: list):
         return self.client.send_msg_and_receive(protocol_name, params)
 
-    def send_msg(self, protocol_name: str, params: list):
-        return self.client.send_msg(protocol_name, params)
-
-    def receive(self):
-        return self.client.receive()
-
+    """
+    关闭连接
+    """
     def close(self):
         try:
             time.sleep(3)
@@ -133,10 +131,6 @@ class Task(threading.Thread):
         finally:
             helper.reback_player_account(self.env, self.playerId)
 
-
-# 获取当前时间的毫秒值
-def getMilliseconds():
-    return int(time.time() * 1000)
 
 """
 客户端
@@ -168,20 +162,20 @@ class Client:
     """
     发送消息 并接收
     """
-    def send_msg_and_receive(self, protocol_name="", params=[]):
-        self.send_msg(protocol_name, params)
-        return self.receive()
+    def send_msg_and_receive(self, protocol_name="", params=[]) -> []:
+        self.__send_msg(protocol_name, params)
+        return self.__receive(protocol_name)
 
     """
     发送消息
     """
-    def send_msg(self, protocol_name="", params=[]):
+    def __send_msg(self, protocol_name="", params=[]):
         if not self.__is_connect():
             raise RuntimeError("未连接上服务器！")
 
 
         # 记录发送时间
-        self.__set_name_alltimes_dict(protocol_name)
+        self.__set_name_alltimes_dict(protocol_name, self.__getMilliseconds())
 
         # 发送
         self.socket.send(self.__encode_send_param(protocol_name, params))
@@ -189,7 +183,7 @@ class Client:
     """
     接受消息
     """
-    def receive(self):
+    def __receive(self, send_protocol_name: str) -> []:
         if not self.__is_connect():
             raise RuntimeError("未连接上服务器！")
 
@@ -201,9 +195,11 @@ class Client:
 
         while True:
             try:
+                # 首次支持阻塞
                 if first:
                     first = False
                 else:
+                    # 后续不支持阻塞
                     self.socket.setblocking(0)
 
                 # 读取报文的长度
@@ -231,25 +227,41 @@ class Client:
                     self.callback(receive_msg[0], receive_msg[1])
 
                 # 记录接收时间
-                self.__set_name_alltimes_dict(receive_msg[0])
+                self.__set_name_alltimes_dict(receive_msg[0], self.__getMilliseconds())
 
             except socket.timeout as e:
-                print(f'Socket timeout: {e}')
+                # print(f'{send_protocol_name} 接口请求超时！: {e}')
+                print(f'{send_protocol_name} 接口请求超时！')
+                # 记录接收时间 -1: 表示请求失败
+                self.__set_name_alltimes_dict(self.__get_receive_protocol_name(send_protocol_name), -1)
                 break
             except BlockingIOError as e:  # 如果没有数据了
+                # print(f'没有数据接收了~ 退出循环: {e}')
+                # print(f'没有数据接收了~ 退出循环')
                 self.socket.setblocking(1)
                 # 退出循环
                 break
         return res
 
     # 赋值 name_alltimes_dict
-    def __set_name_alltimes_dict(self, protocol_name):
+    def __set_name_alltimes_dict(self, protocol_name, mill_seconds):
         alltimes = []
         if protocol_name in self.name_alltimes_dict:
             alltimes = self.name_alltimes_dict[protocol_name]
-        alltimes.append(getMilliseconds())
+        alltimes.append(mill_seconds)
         self.name_alltimes_dict[protocol_name] = alltimes
 
+    # 获取当前时间的毫秒值
+    def __getMilliseconds(self):
+        return int(time.time() * 1000)
+
+    # 获取接收协议名称
+    def __get_receive_protocol_name(self, send_protocol_name: str):
+        return send_protocol_name.replace("q", "s", 1)
+
+    """
+    断开连接
+    """
     def close(self):
         self.socket.close()
         print("与服务器断开连接~")
@@ -483,7 +495,7 @@ class Client:
 
 if __name__ == '__main__':
     # 本地
-    task = Task(config_dict["ip"], config_dict["port"], config_dict["env"], config_dict["is_create_player"])
+    task = Task()
 
     # 刷新配置表  0: 服务器类型 1: 所有服务器; 3: hall; 4: game; 5: player; 6: platform
     # task.add_command("ReqRefreshConfigTable", [1, False])
