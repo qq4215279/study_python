@@ -528,9 +528,9 @@ if __name__ == '__main__':
     # task.add_command("ReqRefreshConfigTable", [1, True])
 
     # 获取功能状态  funcId
-    task.add_command("ReqFunctionStatus", [500500])
+    # task.add_command("ReqFunctionStatus", [500500])
     # 客户端请求某个商店的具体内容  funcId
-    task.add_command("ReqShopGoods", [180800])
+    # task.add_command("ReqShopGoods", [180800])
 
     # 1. 获取战令信息
     # task.add_command("ReqGetPlayerWarOrderInfo", [])
