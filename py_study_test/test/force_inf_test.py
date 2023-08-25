@@ -14,16 +14,23 @@ config_dict = helper.parse_config()
 """
 压测任务
 """
-class ForceTask:
+class ForceTask(threading.Thread):
     def __init__(self):
+        threading.Thread.__init__(self)
         self.force_time = config_dict["force_time"]
         self.is_record = config_dict["is_record"]
         self.player_count = config_dict["player_count"]
         self.startTime = time.time()
-        self.endTime = self.startTime + config_dict["force_time"]
+        self.endTime = self.startTime + int(config_dict["force_time"])
         # 记录信息
-        self.recordInfo = RecordInfo(self.startTime, self.endTime)
+        self.recordInfo = helper.RecordInfo(self.startTime, self.endTime)
+        self.interface_info_dict = {}
+        self.stop_flag = False
+
+
         self.forceModules = self.__init_force_modules()
+
+        self.lock = threading.Lock()
 
     # 初始化所有压测模块
     def __init_force_modules(self):
@@ -82,133 +89,82 @@ class ForceTask:
         class_obj = globals()[class_name]
 
         # 使用类对象创建实例
-        return class_obj()
+        return class_obj(self.handle_force_task_end)
+
+    def run(self) -> None:
+        self.__start()
+
+        while True:
+            cur = time.time()
+            if cur >= self.endTime and not self.stop_flag:
+                self.stop()
+                self.stop_flag = True
+                break
+
+            time.sleep(1)
 
     """
     压测开始
     """
-    def start(self):
+    def __start(self):
         for module_obj in self.forceModules:
             module_obj.start()
 
     def stop(self):
-        # TODO
-        self.recordInfo.update_record()
+        for module_obj in self.forceModules:
+            module_obj.stopForceModule()
 
-class InterfaceInfo:
-    def __init__(self, name: str):
-        # 协议名称
-        self.name = name
-        # 请求成功次数
-        self.success = 0
-        # 请求失败次数
-        self.fail = 0
-        # 最小请求时间
-        self.minTime = 0
-        # 最大请求时间
-        self.maxTime = 0
-        # 平均请求时间
-        self.avgTime = 0
+        time.sleep(3)
+        self.recordInfo.update_record(self.interface_info_dict)
 
-        self.lock = threading.Lock()
-
-    """
-    更新记录
-    """
-    def update_record(self, is_success: bool, access_time: int) -> None:
+    # 结束回调
+    def handle_force_task_end(self, name_alltimes_dict: dict):
         try:
             self.lock.acquire()
-            if is_success:
-                self.minTime = min(self.minTime, access_time)
-                self.maxTime = max(self.maxTime, access_time)
-                self.avgTime = ((self.avgTime * self.success) + access_time) / (self.success + 1)
-                self.success += 1
-            else:
-                self.fail += 1
+
+            for name in name_alltimes_dict.keys():
+                allStartTime = name_alltimes_dict[name]
+                if not name.startswith("Req"):
+                    continue
+
+                if name in self.interface_info_dict:
+                    interface_info = self.interface_info_dict[name]
+                else:
+                    interface_info = helper.InterfaceInfo(name)
+                    self.interface_info_dict[name] = interface_info.__dict__
+
+
+                resName = name.replace("q", "s", 1) + ": "
+                allResStartTime = name_alltimes_dict[resName]
+
+                for i in range(len(allStartTime)):
+                    start = allStartTime[i - 1]
+                    end = allResStartTime[i - 1]
+                    if end == -1:
+                        interface_info.fail += 1
+                    else:
+                        interface_info.success += 1
+
+                    interface_info.update_record(end != -1, (end - start))
+
         except RuntimeError as e:
-            print("update_record error...")
+            pass
         finally:
             self.lock.release()
 
-
-class RecordInfo:
-    def __init__(self, startTime: int, endTime: int):
-        # 压测开始时间
-        self.startTime = startTime
-        # 压测结束时间
-        self.endTime = endTime
-        # 压测模块: 数量
-        self.force_modules_record_dict = {}
-        # 总请求次数
-        self.total = 0
-        # 请求失败总次数
-        self.fail = 0
-        # 失败协议: 总次数
-        self.fail_dict = {}
-        # 总平均请求时间
-        self.avgTime = 0
-        # 平均请求时间最长协议
-        self.maxAvgTimeName: str
-        # 平均请求最长时间
-        self.maxAvgTime = 0
-
-    def update_record(self, *interfaceList: InterfaceInfo):
-        # 总成功次数
-        success = 0
-        # 总请求消耗时间
-        total_time = 0
-
-        for info in interfaceList:
-            success += info.success
-            total_time += info.success * info.avgTime
-
-            self.fail += info.fail
-
-            fail = 0
-            if self.name in self.fail_dict:
-                fail = self.fail_dict[self.name]
-            self.fail_dict[self.name] = fail + info.fail
-
-            if info.avgTime > self.maxAvgTime:
-                self.maxAvgTimeName = info.name
-                self.maxAvgTime = info.avgTime
-
-        self.total = success + self.fail
-        self.maxAvgTime = total_time / success
-
-        # 写日志
-        self.__write_log()
-
-    # 写日志
-    def __write_log(self):
-        with open(r"./record.log", "w+", encoding='utf-8') as file:
-            file.writelines("本次压测结果汇总如下: \n")
-            t = self.startTime - self.endTime
-            file.writelines(f"压测开始时间：{self.startTime}, 压测结束时间：{self.endTime}, 总耗时：{t} \n")
-            file.writelines(f"压测模块有如下： \n")
-            str = ""
-            for key, value in self.force_modules_record_dict:
-                str += key + ", 玩家数：" + value + "; "
-            file.writelines(f"{str}\n")
-            file.writelines(f"总请求次数: {self.total}, 请求失败总次数: {self.fail} , 失败协议汇总如下: \n")
-            str = ""
-            for key, value in self.fail_dict:
-                str += key + ", 失败次数：" + value + "; "
-            file.writelines(f"{str}\n")
-            file.writelines(f"总平均请求时间: {self.maxAvgTimeName} \n")
-            file.writelines(f"平均请求时间最大协议: {self.maxAvgTimeName} , 平均请求最长时间为: {self.maxAvgTime} \n")
-            file.writelines("汇总结束 ------------------------------------------------------> \n")
 
 """
 压测模块
 """
 class ForceModule(threading.Thread):
-    def __init__(self, ):
+    def __init__(self, force_task_callback):
         threading.Thread.__init__(self)
         # 是否终止线程
         self.stop = False
         self.first = True
-        self.task = Task(self.handle_receive)
+        self.task = Task(self.handle_receive, self.handle_module_end)
+        self.force_task_callback = force_task_callback
+
 
     def run(self):
         while(True):
@@ -220,6 +176,9 @@ class ForceModule(threading.Thread):
 
             print(threading.current_thread().getName(), " 休眠1s~")
             time.sleep(1)
+
+    def stopForceModule(self):
+        self.stop = True
 
     """
     添加命令
@@ -263,6 +222,14 @@ class ForceModule(threading.Thread):
         print(protocal_name, res)
         pass
 
+    """
+    处理结束
+    """
+    def handle_module_end(self, name_alltimes_dict: dict):
+        print("handle_module_end....")
+        self.force_task_callback(name_alltimes_dict)
+        pass
+
 '''
 战令压测模块
 '''
@@ -297,8 +264,8 @@ class WarOrderForceModule(ForceModule):
         self.add_command("ReqGetWarOrderTaskReward", [random.choice((-1, -2, -3))])
 
 
-    def handle_receive(self, protocal_name: str, res: dict):
-        pass
+    # def handle_receive(self, protocal_name: str, res: dict):
+    #     pass
 
 
 

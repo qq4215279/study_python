@@ -25,13 +25,15 @@ protocol_schemas_dict = protocal[2]
 任务
 """
 class Task(threading.Thread):
-    def __init__(self, callback=None):
+    def __init__(self, callback=None, callback2=None):
         threading.Thread.__init__(self)
         self.ip = config_dict["ip"]
         self.port = config_dict["port"]
         self.env = config_dict["env"]
         # 是否创角
         self.is_create_player = config_dict["is_create_player"] == 1
+
+        self.callback2 = callback2
 
         self.name_alltimes_dict = {}
         # 连接客户端
@@ -46,31 +48,36 @@ class Task(threading.Thread):
 
     # 初始化
     def __init(self):
-        # 登录
-        if not self.is_create_player:
+        # 注册
+        if self.is_create_player:
+            self.__register()
+        else:
             flag_player_dict = helper.find_player_account(self.env)
+            need_create_player = flag_player_dict[0]
             player_dict = flag_player_dict[1]
-
-            if flag_player_dict[0]:
+            # 登录
+            if not need_create_player:
                 self.playerId = player_dict["playerId"]
                 self.account = player_dict["account"]
                 self.password = player_dict["password"]
                 self.client.send_msg_and_receive("ReqLoginAccount",
                                                  [self.account, self.password, player_dict["channel"], "1.0.0"])
-        else:
-            # 注册
-            receive_dict = self.client.send_msg_and_receive("ReqRegisterTourist", ["test2", "1.0.0", "test22"])[0][1]
-            write_dict = {"isUsed": 1, "account": receive_dict['account'], "password": receive_dict['password'],
-                          "channel": receive_dict['channel'], "playerId": receive_dict['playerInfo']["playerId"]}
+            else:
+                # 注册
+                self.__register()
 
-            self.playerId = write_dict["playerId"]
-            self.account = write_dict["account"]
-            self.password = write_dict["password"]
-            # 登录
-            self.client.send_msg_and_receive("ReqLoginAccount",
-                                             [self.account, self.password, write_dict["channel"], "1.0.0"])
+    # 注册
+    def __register(self):
+        receive_dict = self.client.send_msg_and_receive("ReqRegisterTourist", ["test2", "1.0.0", "test22"])[0][1]
+        write_dict = {"isUsed": 1, "account": receive_dict['account'], "password": receive_dict['password'],
+                      "channel": receive_dict['channel'], "playerId": receive_dict['playerInfo']["playerId"]}
+        self.playerId = write_dict["playerId"]
+        self.account = write_dict["account"]
+        self.password = write_dict["password"]
+        # 登录
+        self.client.send_msg_and_receive("ReqLoginAccount", [self.account, self.password, write_dict["channel"], "1.0.0"])
+        helper.add_player_account(self.env, self.playerId, write_dict)
 
-            helper.add_player_account(self.env, self.playerId, write_dict)
 
     def run(self) -> None:
         t = 0
@@ -122,11 +129,15 @@ class Task(threading.Thread):
     """
     def close(self):
         try:
+            if not self.callback2 is None:
+                print("name_alltimes_dict: ", self.name_alltimes_dict)
+                self.callback2(self.name_alltimes_dict)
+
             time.sleep(3)
             self.client.close()
-            print(self.name_alltimes_dict)
-        except:
-            print("close client error!")
+        except RuntimeError as e:
+
+            print(f"close client error! {e}")
             pass
         finally:
             helper.reback_player_account(self.env, self.playerId)
@@ -455,21 +466,36 @@ class Client:
             return struct.unpack(">i", stream.read(4))[0]
         if type == 'int64':
             byte_val = stream.read(8)
-            if len((byte_val)) == 4:
+            if len(byte_val) == 4:
                 return struct.unpack(">i", byte_val)[0]
             return struct.unpack(">q", byte_val)[0]
         if type == 'float':
             return struct.unpack(">f", stream.read(4))[0]
+        if type == 'double':
+            return struct.unpack(">d", stream.read(8))[0]
         elif type == 'string':
-            str_len = struct.unpack(">i", stream.read(4))[0]
-            str_byte = stream.read(str_len)
+            return self.__decode_bytes_2_str(stream)
+        elif type.endswith("{}"):
+            dict_data = {}
+            length = struct.unpack(">i", stream.read(4))[0]
+            for i in range(length):
+                key = self.__decode_bytes_2_str(stream)
+                subType = type[:len(type) - 2]
+                dict_data[key] = self.__do_decode_value(stream, subType)
 
-            if str_byte is None or len(str_byte) <= 0:
-                return ""
-            return str_byte.decode(encoding='utf-8')
+            return dict_data
         else:
             schemas = protocol_schemas_dict[type]
             return self.__do_decode_receive_msg(stream, schemas)
+
+    # 解码字符串
+    def __decode_bytes_2_str(self, stream):
+        str_len = struct.unpack(">i", stream.read(4))[0]
+        str_byte = stream.read(str_len)
+
+        if str_byte is None or len(str_byte) <= 0:
+            return ""
+        return str_byte.decode(encoding='utf-8')
 
     # 获取默认值
     def __get_default_value(self, type):
@@ -501,13 +527,15 @@ if __name__ == '__main__':
     # task.add_command("ReqRefreshConfigTable", [1, False])
     # task.add_command("ReqRefreshConfigTable", [1, True])
 
-    # 获取功能状态
-    # task.add_command("ReqFunctionStatus", [500500])
+    # 获取功能状态  funcId
+    task.add_command("ReqFunctionStatus", [500500])
+    # 客户端请求某个商店的具体内容  funcId
+    task.add_command("ReqShopGoods", [180800])
 
     # 1. 获取战令信息
-    task.add_command("ReqGetPlayerWarOrderInfo", [])
+    # task.add_command("ReqGetPlayerWarOrderInfo", [])
     # 2. 请求领取战令通行证奖励
-    task.add_command("ReqGetWarOrderPassCardReward", [])
+    # task.add_command("ReqGetWarOrderPassCardReward", [])
     # 3. 请求获取夏日寻访信息
     # task.add_command("ReqGetSummerTourInfo", [])
     # 4. 请求寻访  寻访类型: 1: 阳光海滩; 2: 泳池派对    次数
