@@ -32,6 +32,8 @@ task = Task("lz001", "1", ifCreateUser=True)  # playerId =
 # task.addCommand("gm@gmcommand", {"cmd":"物品","param":"10000"})
 # task.addCommand("gm@gmcommand", {"cmd":"道具","param":"90"})
 
+task.addCommand("player@getRandomRoleName", {"male":"1"})
+
 # ----------------------------------------------------------------------------------->
 # 军团指令 ------------------------------------------------>
 # 获取军团指令信息
@@ -40,7 +42,7 @@ task = Task("lz001", "1", ifCreateUser=True)  # playerId =
 # 发动指令
 # task.addCommand("club@getClubOrderInfo", {"orderId":"", "param":""})
 
-task.addCommand("unit@troopsGoHome", {})
+# task.addCommand("unit@troopsGoHome", {})
 
 
 

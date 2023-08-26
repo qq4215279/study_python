@@ -145,6 +145,7 @@ def test_2():
         print(c)
     except ZeroDivisionError:
         print("异常：除数不能为 0")
+        raise NameError("异常：除数不能为 0!!!")
     except TypeError:
         print("异常：除数和被除数都应该为数值类型")
     except NameError:

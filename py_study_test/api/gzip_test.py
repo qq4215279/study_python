@@ -9,8 +9,8 @@ gzip模块主要提供了gzip.GzipFile类来处理压缩文件，同时也有一
 
 
 1. gzip.compress(data, compresslevel=9)：该函数用于对数据进行压缩。
-        data是要压缩的数据，可以是一个字节字符串（bytes对象）或一个普通的Unicode字符串（str对象）。
-        compresslevel是压缩级别，取值范围是0（无压缩）到9（最大压缩）。默认值是9，表示使用最大压缩级别。
+        data 是要压缩的数据，一个字节字符串（bytes对象）
+        compresslevel 是压缩级别，取值范围是0（无压缩）到9（最大压缩）。默认值是9，表示使用最大压缩级别。
 
 2. gzip.decompress(data)：该函数用于对压缩的数据进行解压缩。data是要解压缩的数据，必须是一个字节字符串（bytes对象）。
 
