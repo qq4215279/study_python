@@ -143,7 +143,8 @@ class Client():
     def _send(self, cmd, param={}):
         data = ""
         index = 1
-        for (key, value) in param.iteritems():
+        # for (key, value) in param.iteritems():
+        for (key, value) in param.items():
             if index > 1:
                 data = data + "&"
             data = data + key + "=" + value
@@ -238,7 +239,7 @@ class Task(threading.Thread):
         self.hasInput = hasInput
         self.ifCreateUser = ifCreateUser
         # self.client = Client("10.9.200.103", 8858, False)
-        self.client = Client("localhost", 8858, False)
+        self.client = Client("localhost", 8859, False)
         self.client.connect()
         if (self.ifCreateUser):
             # 创建用户

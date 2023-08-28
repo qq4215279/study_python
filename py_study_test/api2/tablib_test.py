@@ -12,7 +12,7 @@ def getData():
 
     # dataset1.xls  # 转成xls格式
 
-    open('testXLS.xls', 'wb').write(dataset1.xls)
+    open('./file/testXLS.xls', 'wb').write(dataset1.xls)
 
 if __name__ == '__main__':
     getData()

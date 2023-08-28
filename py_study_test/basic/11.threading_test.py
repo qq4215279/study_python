@@ -18,9 +18,10 @@ import time
 
 _thread 和 threading 提供对线程的支持。_thread 提供了低级别的、原始的线程以及一个简单的锁，它相比于 threading 模块的功能还是比较有限的。
 threading 模块除了包含 _thread 模块中的所有方法外，还提供的其他方法：
-threading.currentThread(): 返回当前的线程变量。
-threading.enumerate(): 返回一个包含正在运行的线程的list。正在运行指线程启动后、结束前，不包括启动前和终止后的线程。
-threading.activeCount(): 返回正在运行的线程数量，与 len(threading.enumerate())有相同的结果。
+    threading.currentThread(): 返回当前的线程变量。
+    threading.enumerate(): 返回一个包含正在运行的线程的list。正在运行指线程启动后、结束前，不包括启动前和终止后的线程。
+    threading.activeCount(): 返回正在运行的线程数量，与 len(threading.enumerate())有相同的结果。
+    threading.main_thread()  返回主 Thread 对象。一般情况下，主线程是Python解释器开始时创建的线程。
 
 
 创建方式1: t = threading.Thread(group=None, target=None, name=None, args=(), kwargs={})
@@ -35,6 +36,12 @@ api:
     isAlive()  返回线程是否活动的
     getName()  返回线程名
     setName()  设置线程名
+    
+    name  只用于识别的字符串。它没有语义。多个线程可以赋予相同的名称。 初始名称由构造函数设置。
+    is_alive()  返回线程是否存活。
+    daemon  一个表示这个线程是（True）否（False）守护线程的布尔值。
+    isDaemon()
+    setDaemon()
 
 线程共享全局变量
 互斥锁：
