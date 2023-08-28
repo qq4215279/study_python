@@ -1,7 +1,7 @@
 # encoding: utf-8
 
 import helper
-from inf_test import Task
+from api_test import Task
 
 import random
 import threading
@@ -114,7 +114,7 @@ class ForceTask(threading.Thread):
         for module_obj in self.forceModules:
             module_obj.stopForceModule()
 
-        time.sleep(3)
+        time.sleep(5)
         self.recordInfo.update_record(self.interface_info_dict)
 
     # 结束回调

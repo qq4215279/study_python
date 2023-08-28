@@ -533,7 +533,7 @@ if __name__ == '__main__':
     # task.add_command("ReqShopGoods", [180800])
 
     # 1. 获取战令信息
-    # task.add_command("ReqGetPlayerWarOrderInfo", [])
+    task.add_command("ReqGetPlayerWarOrderInfo", [])
     # 2. 请求领取战令通行证奖励
     # task.add_command("ReqGetWarOrderPassCardReward", [])
     # 3. 请求获取夏日寻访信息
