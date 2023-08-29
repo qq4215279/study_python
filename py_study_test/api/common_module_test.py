@@ -7,6 +7,8 @@ import inspect
 import traceback
 # TODO time
 import time
+#
+import sys
 
 """
 random 模块
@@ -244,5 +246,7 @@ if __name__ == '__main__':
     # 获取当前时间的毫秒值
     milliseconds = int(time.time() * 1000)
     print(milliseconds)
+
+    print(sys.maxsize)
 
 

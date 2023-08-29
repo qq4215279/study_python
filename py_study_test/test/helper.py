@@ -5,6 +5,7 @@ import json
 import threading
 import datetime
 
+KEY = "qca5o036w3nwm3se5xuf0hqsbgj6184m==2jiicuucqcoxnihgr6ou24wmdf587yuv"
 
 """
 帮助类
@@ -208,6 +209,10 @@ class RecordInfo:
         self.maxAvgTimeName = ""
         # 平均请求最长时间
         self.maxAvgTime = 0
+        # 平均请求时间最长协议 的总访问次数
+        self.maxAvgAccessTimes = 0
+        # 平均访问时间超过100毫秒的协议
+        self.maxAvg100Mills = []
 
     def update_record(self, interface_info_dict: dict):
         # 总成功次数
@@ -216,8 +221,7 @@ class RecordInfo:
         total_time = 0
 
         for key in interface_info_dict:
-            info = interface_info_dict[key]
-            obj = self.__json_obj(info)
+            obj = interface_info_dict[key]
             if obj is None:
                 continue
 
@@ -234,6 +238,12 @@ class RecordInfo:
             if obj.avgTime > self.maxAvgTime:
                 self.maxAvgTimeName = obj.name
                 self.maxAvgTime = obj.avgTime
+                self.maxAvgAccessTimes = obj.success + obj.fail
+
+            # 超过100毫秒
+            if obj.avgTime > 100:
+                value = [obj.name, obj.avgTime, obj.success + obj.fail]
+                self.maxAvg100Mills.append(value)
 
 
 
@@ -245,16 +255,6 @@ class RecordInfo:
         # 写日志
         self.__write_log()
 
-
-    def __json_obj(self, json):
-        obj = InterfaceInfo(json["name"])
-        obj.success = json["success"]
-        obj.fail = json["fail"]
-        obj.minTime = json["minTime"]
-        obj.maxTime = json["maxTime"]
-        obj.avgTime = json["avgTime"]
-        return obj
-
     # 写日志
     def __write_log(self):
         with open(r"./record.log", "a+", encoding='utf-8') as file:
@@ -262,24 +262,27 @@ class RecordInfo:
             t = self.endTime - self.startTime
             start = datetime.datetime.fromtimestamp(self.startTime)
             end = datetime.datetime.fromtimestamp(self.endTime)
-            file.writelines(f"压测开始时间：{start}, 压测结束时间：{end}, 总耗时：{t} 秒\n")
-            file.writelines(f"压测模块有如下： \n")
+            file.writelines(f"1. 压测开始时间：{start}, 压测结束时间：{end}, 总耗时：{t} 秒\n")
+            file.writelines(f"2. 压测模块有如下： \n")
             str = ""
-            for key in self.force_modules_record_dict:
-                value = self.force_modules_record_dict[key]
-                str += f"{key}, 玩家数：{value}; "
+            for protocal_name in self.force_modules_record_dict:
+                value = self.force_modules_record_dict[protocal_name]
+                str += f"    {protocal_name}, 玩家数：{value}; "
             file.writelines(f"{str}\n")
-            file.writelines(f"总请求次数: {self.total}, 请求失败总次数: {self.fail} , 失败协议汇总如下: \n")
+            file.writelines(f"3. 总请求次数: {self.total}, 请求失败总次数: {self.fail} , 失败协议汇总如下: \n")
             str = ""
-            for key in self.fail_dict:
-                value = self.fail_dict[key]
-                if value == 0:
-                    str += f"     失败次数：{value}; "
-                else:
-                    str += f"     {key}, 失败次数：{value}; "
+            for protocal_name in self.fail_dict:
+                value = self.fail_dict[protocal_name]
+                if not value == 0:
+                    str += f"     {protocal_name}, 失败次数：{value}; "
             file.writelines(f"{str}\n")
+
             avgTime = int(self.avgTime)
-            file.writelines(f"总平均请求时间: {avgTime} 毫秒 \n")
+            file.writelines(f"4. 总平均请求时间: {avgTime} 毫秒 \n")
             maxAvgTime = int(self.maxAvgTime)
-            file.writelines(f"平均请求时间最大协议: {self.maxAvgTimeName} , 平均请求最长时间为: {maxAvgTime} 毫秒 \n")
+            file.writelines(f"5. 平均请求时间最大协议: {self.maxAvgTimeName} , 平均请求最长时间为: {maxAvgTime} 毫秒 \n")
+            file.writelines(f"6. 平均访问时间超过100毫秒的协议如下： \n")
+            for i in range(len(self.maxAvg100Mills)):
+                value = self.maxAvg100Mills[i - 1]
+                file.writelines(f"    协议名称: {value[0]} , 平均访问时间: {int(value[1])} 毫秒, 总访问次数: {value[2]} \n")
             file.writelines("汇总结束 ------------------------------------------------------> \n\n\n")

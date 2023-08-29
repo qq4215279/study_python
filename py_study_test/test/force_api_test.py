@@ -1,4 +1,5 @@
 # encoding: utf-8
+import sys
 
 import helper
 from api_test import Task
@@ -26,6 +27,7 @@ class ForceTask(threading.Thread):
         self.recordInfo = helper.RecordInfo(self.startTime, self.endTime)
         self.interface_info_dict = {}
         self.stop_flag = False
+        self.finish_stop_num = 0
 
 
         self.forceModules = self.__init_force_modules()
@@ -114,8 +116,18 @@ class ForceTask(threading.Thread):
         for module_obj in self.forceModules:
             module_obj.stopForceModule()
 
-        time.sleep(5)
-        self.recordInfo.update_record(self.interface_info_dict)
+        # time.sleep(5)
+        # self.recordInfo.update_record(self.interface_info_dict)
+        t_stop = threading.Thread(target=self.__run_stop())
+        t_stop.start()
+
+    def __run_stop(self):
+        while True:
+            if self.finish_stop_num >= len(self.forceModules):
+                self.recordInfo.update_record(self.interface_info_dict)
+                break
+            else:
+                time.sleep(1)
 
     # 结束回调
     def handle_force_task_end(self, name_alltimes_dict: dict):
@@ -131,7 +143,7 @@ class ForceTask(threading.Thread):
                     interface_info = self.interface_info_dict[name]
                 else:
                     interface_info = helper.InterfaceInfo(name)
-                    self.interface_info_dict[name] = interface_info.__dict__
+                    self.interface_info_dict[name] = interface_info
 
 
                 resName = name.replace("q", "s", 1) + ": "
@@ -150,6 +162,7 @@ class ForceTask(threading.Thread):
         except RuntimeError as e:
             pass
         finally:
+            self.finish_stop_num += 1
             self.lock.release()
 
 
@@ -164,6 +177,8 @@ class ForceModule(threading.Thread):
         self.first = True
         self.task = Task(self.handle_receive, self.handle_module_end)
         self.force_task_callback = force_task_callback
+        # 休眠时间
+        self.ticket = 1
 
 
     def run(self):
@@ -174,8 +189,14 @@ class ForceModule(threading.Thread):
             self.__before_test()
             self._do_test()
 
-            print(threading.current_thread().getName(), " 休眠1s~")
-            time.sleep(1)
+
+            time.sleep(self.ticket)
+            print(threading.current_thread().getName(), f" 休眠{self.ticket}s~")
+
+    @property
+    def set_ticket(self, ticket):
+        self.ticket = ticket
+
 
     def stopForceModule(self):
         self.stop = True
@@ -267,17 +288,62 @@ class WarOrderForceModule(ForceModule):
     # def handle_receive(self, protocal_name: str, res: dict):
     #     pass
 
+"""
+全房间打鱼
+"""
+class AllRoomAllFishForceModule(ForceModule):
+    def __init__(self):
+        # super(ForceModule, self).__init__(self)
+        super.__init__()
+
+        self.BOSS_LIVE_TIME = 100000
+        self.bulletIndex = 0
+        self.currBossIndex = -1
+        self.bossMap = {}
+        # TODO
+        # roomIndex = random.random(5)
+        self.roomIndex = 1
+
+        self.playerId = 0
 
 
-import atexit
-def callback_function():
-    print("Callback function called.")
+    def _do_before_test(self):
+        self.add_command("ReqGiveMeItems", [{"1001": 10000000000, "1006": 100000000, "6001": 100000000, "6113": 100000000, "4001": 9999}, helper.KEY, 10125])
+        # 进房间
+        self.add_command("ReqEnterFruitRoom", [self.roomIndex, 1])
+
+    def _do_test(self):
+        pass
+
+
+    def handle_receive(self, protocal_name: str, res: dict):
+        if protocal_name.find("ResLoginAccount") != -1:
+            self.playerId = res["playerInfo"]["playerId"]
+            self.add_command("ReqGiveMeItems", [
+                {"1001": 10000000000, "1006": 100000000, "6001": 100000000, "6113": 100000000, "4001": 9999},
+                helper.KEY, self.playerId])
+
+            maxCannonMultiple = res["playerInfo"]["maxCannonMultiple"]
+            if maxCannonMultiple < 500000:
+                # 升级炮倍
+                self.add_command("ReqOBUnlockCannonLv", [50000, True])
+                time.sleep(1)
+                # 切换到50000炮倍
+                self.add_command("ReqFruitChangeMultiple", [50000])
+        elif protocal_name.find("ResEnterFruitRoom") != -1:
+            print(f" player:" + self.playerId + " 进入桌子 开始打鱼..")
+            # TODO
+            # self.add_command("ReqFruitChangeMultiple", [50000])
+
+
+
+    def __next_bulet(self):
+        if self.bulletIndex == sys.maxsize:
+            self.bulletIndex = 0
+        else:
+            self.bulletIndex += 1
 
 
 if __name__ == '__main__':
     task = ForceTask()
-
     task.start()
-
-    # 注册回调函数
-    atexit.register(callback_function)

@@ -523,7 +523,7 @@ if __name__ == '__main__':
     # 本地
     task = Task()
 
-    # 刷新配置表  0: 服务器类型 1: 所有服务器; 3: hall; 4: game; 5: player; 6: platform
+    # 刷新配置表  0: 服务器类型 1: 所有服务器; 3: hall; 4: game; 5: player; 6: platform    True: 测试服重新下载
     # task.add_command("ReqRefreshConfigTable", [1, False])
     # task.add_command("ReqRefreshConfigTable", [1, True])
 
@@ -531,6 +531,9 @@ if __name__ == '__main__':
     # task.add_command("ReqFunctionStatus", [500500])
     # 客户端请求某个商店的具体内容  funcId
     # task.add_command("ReqShopGoods", [180800])
+
+    # 请求给我发放一些道具
+    task.send_msg_and_receive("ReqGiveMeItems", [{"1004": -1000}, helper.KEY, 10125])
 
     # 1. 获取战令信息
     task.add_command("ReqGetPlayerWarOrderInfo", [])
@@ -554,8 +557,6 @@ if __name__ == '__main__':
     # 10. 请求领取战令任务奖励  任务id: >0: 具体任务; -1: 每日任务可领奖列表; -2: 每周任务可领奖列表; -3: 每期任务可领奖列表
     # task.add_command("ReqGetWarOrderTaskReward", [-1000])
 
-    # task.send_msg_and_receive("ReqFunctionStatus", [500000])
-    key = "qca5o036w3nwm3se5xuf0hqsbgj6184m==2jiicuucqcoxnihgr6ou24wmdf587yuv"
-    # task.send_msg_and_receive("ReqGiveMeItems", [{"1004": -1000}, key, 10125])
+
 
     task.start()
