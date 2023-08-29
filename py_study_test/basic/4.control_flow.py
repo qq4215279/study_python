@@ -135,7 +135,7 @@ for x in range(10):
 
 '''
 字典推导式:
-格式如下：{key_expression : value_expression for 表达式 in 可迭代对象}
+格式如下：{key_expression: value_expression for 表达式 in 可迭代对象}
 类似于列表推导式，字典推导也可以增加 if 条件判断、多个 for 循环。
 '''
 my_text = ' i love you, i love sxt, i love gaoqi'
@@ -145,8 +145,8 @@ print(char_count)
 
 '''
 集合推导式:
-集合推导式生成集合，和列表推导式的语法格式类似：`{表达式 for item in 可迭代对象 }`
-或者：{表达式 for item in 可迭代对象 if 条件判断}
+集合推导式生成集合，和列表推导式的语法格式类似：`{ 表达式 for item in 可迭代对象 }`
+或者: { 表达式 for item in 可迭代对象 if 条件判断 }
 '''
 res = {x for x in range(1, 100) if x % 9 == 0}
 print("集合推导式: ")

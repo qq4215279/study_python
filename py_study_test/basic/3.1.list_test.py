@@ -73,7 +73,9 @@ print("------------------------------------>")
 列表的遍历 
     for obj in listObj:
 	    print(obj)
-
+    
+    for i in range(len(listObj)):
+        print(listObj[i])
 	    
 列表排序 
 升序：
@@ -146,6 +148,11 @@ print(flag)
 print("开始遍历列表：")
 for num in list:
     print(num)
+print("结束遍历列表===========>")
+
+print("开始遍历列表2：")
+for i in range(len(list)):
+    print("i: " + str(i) + " value: ", list[i])
 print("结束遍历列表===========>")
 
 '''

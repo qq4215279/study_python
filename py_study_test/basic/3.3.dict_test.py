@@ -18,8 +18,23 @@
     dict.items() 列出所有的键，列出所有的值
     len() 键值对的个数
     遍历字典：使用循环遍历字典的键或键-值对。
-        for key in dict:
-            value = dict[key]
+        1. 方式1
+            for key in dict:
+                value = dict[key]
+
+        2. 方式2
+            for key, value in dict.items():
+                print(key, value)
+
+        4. 方式3：使用enumerate()方法遍历字典。它可以同时返回列表数据和数据下标。
+            for i, (key, value) in enumerate(dict.items()):
+                print(i, key, value)
+
+        3. 方式4：key value 分开遍历
+            for key in dict:
+                print(key)
+            for value in dict.values():
+                print(value)
 
 3. 字典元素添加、修改
     dict[key] = value  添加或修改。给字典新增“键值对”。如果“键”已经存在，则覆盖旧的键值对；如果“键”不存在， 则新增“键值对”。

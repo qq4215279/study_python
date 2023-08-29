@@ -30,6 +30,9 @@
     len(set)：返回集合中元素的数量。
     element in set：检查元素是否在集合中。
 
+遍历集合
+    for obj in set:
+        print(obj)
 
 '''
 # 集合的创建
