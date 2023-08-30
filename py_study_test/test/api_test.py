@@ -93,7 +93,8 @@ class Task(threading.Thread):
 
             if len((all_commands)) <= 0:
                 # 超过3s没有任务，断开连接
-                if t >= 3:
+                # TODO
+                if t >= 5:
                     break
                 t += 1
                 time.sleep(1)
@@ -130,7 +131,7 @@ class Task(threading.Thread):
     def close(self):
         try:
             if not self.callback2 is None:
-                print("name_alltimes_dict: ", self.name_alltimes_dict)
+                print("开始关闭连接... name_alltimes_dict: ", self.name_alltimes_dict)
                 self.callback2(self.name_alltimes_dict)
 
             time.sleep(3)
@@ -396,11 +397,15 @@ class Client:
         # do 解码消息
         receive_msg_dict = self.__do_decode_receive_msg(stream, schemas)
 
-        protocol_name = ": "
+        protocol_name = ""
         if messageId in protocol_id_name_dict:
-            protocol_name = protocol_id_name_dict[messageId] + protocol_name
+            protocol_name = protocol_id_name_dict[messageId]
+
+        # 不打印的协议集合
+        UN_PRINT_PROTOCAL = {"ResKeepAlive"}
         # 打印结果
-        print(protocol_name, receive_msg_dict)
+        if protocol_name not in UN_PRINT_PROTOCAL:
+            print(protocol_name + ": ", receive_msg_dict)
 
         return protocol_name, receive_msg_dict
 
@@ -439,8 +444,26 @@ class Client:
 
     # do 解码具体协议
     def __do_decode_schema(self, stream, type):
-        # 数组
-        if type.endswith("[]"):
+        # 二维数组
+        if type.endswith("[][]"):
+            type = type[:len(type) - 4]
+
+            array = []
+            byte_val = stream.read(4)
+            arr_size = struct.unpack(">i", byte_val)[0]
+            for i in range(arr_size):
+                byte2_val = stream.read(4)
+                arr2_size = struct.unpack(">i", byte2_val)[0]
+
+                array2 = []
+                for j in range(arr2_size):
+                    array2.append(self.__do_decode_value(stream, type))
+                array.append(array2)
+
+            return array
+
+        # 一维数组
+        elif type.endswith("[]"):
             type = type[:len(type) - 2]
 
             array = []
@@ -516,7 +539,7 @@ class Client:
         elif type == 'string':
             return ""
         else:
-            return dict()
+            return {}
 
 
 if __name__ == '__main__':
@@ -533,10 +556,12 @@ if __name__ == '__main__':
     # task.add_command("ReqShopGoods", [180800])
 
     # 请求给我发放一些道具
-    task.send_msg_and_receive("ReqGiveMeItems", [{"1004": -1000}, helper.KEY, 10125])
+    # task.send_msg_and_receive("ReqGiveMeItems", [{"1107": 1000}, helper.KEY, 10358])
+    task.send_msg_and_receive("ReqGiveMeItems", [{"1001": 10000000000, "1006": 100000000, "6001": 100000000, "6113": 100000000, "4001": 9999}, helper.KEY, 10358])
+
 
     # 1. 获取战令信息
-    task.add_command("ReqGetPlayerWarOrderInfo", [])
+    # task.add_command("ReqGetPlayerWarOrderInfo", [])
     # 2. 请求领取战令通行证奖励
     # task.add_command("ReqGetWarOrderPassCardReward", [])
     # 3. 请求获取夏日寻访信息

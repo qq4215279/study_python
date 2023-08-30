@@ -116,8 +116,6 @@ class ForceTask(threading.Thread):
         for module_obj in self.forceModules:
             module_obj.stopForceModule()
 
-        # time.sleep(5)
-        # self.recordInfo.update_record(self.interface_info_dict)
         t_stop = threading.Thread(target=self.__run_stop())
         t_stop.start()
 
@@ -146,7 +144,7 @@ class ForceTask(threading.Thread):
                     self.interface_info_dict[name] = interface_info
 
 
-                resName = name.replace("q", "s", 1) + ": "
+                resName = name.replace("q", "s", 1)
                 allResStartTime = name_alltimes_dict[resName]
 
                 for i in range(len(allStartTime)):
@@ -180,11 +178,19 @@ class ForceModule(threading.Thread):
         # 休眠时间
         self.ticket = 1
 
+    def _set_ticket(self, ticket):
+        self.ticket = ticket
+
+    def _get_ticket(self):
+        return self.ticket
 
     def run(self):
         while(True):
             if self.stop:
                 break
+
+            # 保持心跳
+            self.add_command("ReqKeepAlive", [])
 
             self.__before_test()
             self._do_test()
@@ -192,10 +198,6 @@ class ForceModule(threading.Thread):
 
             time.sleep(self.ticket)
             print(threading.current_thread().getName(), f" 休眠{self.ticket}s~")
-
-    @property
-    def set_ticket(self, ticket):
-        self.ticket = ticket
 
 
     def stopForceModule(self):
@@ -239,8 +241,6 @@ class ForceModule(threading.Thread):
     处理回调
     """
     def handle_receive(self, protocal_name: str, res: dict):
-        print("handle_receive....")
-        print(protocal_name, res)
         pass
 
     """
@@ -285,63 +285,144 @@ class WarOrderForceModule(ForceModule):
         self.add_command("ReqGetWarOrderTaskReward", [random.choice((-1, -2, -3))])
 
 
-    # def handle_receive(self, protocal_name: str, res: dict):
-    #     pass
+    def handle_receive(self, protocal_name: str, res: dict):
+        pass
 
 """
 全房间打鱼
 """
 class AllRoomAllFishForceModule(ForceModule):
-    def __init__(self):
-        # super(ForceModule, self).__init__(self)
-        super.__init__()
+    def __init__(self, force_task_callback):
+        super().__init__(force_task_callback)
+        super()._set_ticket(0.2)
+
+        # 是否进入房间
+        self.isEnterRoom = False
+        # 使用道具cd
+        self.shotItemCD = 30
 
         self.BOSS_LIVE_TIME = 100000
         self.bulletIndex = 0
         self.currBossIndex = -1
         self.bossMap = {}
-        # TODO
-        # roomIndex = random.random(5)
-        self.roomIndex = 1
-
-        self.playerId = 0
-
+        self.roomIndex = random.randint(1, 5)
 
     def _do_before_test(self):
-        self.add_command("ReqGiveMeItems", [{"1001": 10000000000, "1006": 100000000, "6001": 100000000, "6113": 100000000, "4001": 9999}, helper.KEY, 10125])
+        if self.gold < 10000000000:
+            self.add_command("ReqGiveMeItems", [{"1001": 10000000000, "1006": 100000000, "6001": 100000000, "6113": 100000000, "4001": 9999}, helper.KEY, self.playerId])
+        if self.maxCannonMultiple < 500000:
+            # 升级炮倍
+            self.add_command("ReqOBUnlockCannonLv", [50000, True])
+            time.sleep(1)
+            # 切换到50000炮倍
+            self.add_command("ReqFruitChangeMultiple", [50000])
         # 进房间
-        self.add_command("ReqEnterFruitRoom", [self.roomIndex, 1])
+        self.add_command("ReqEnterFruitRoom", [self.roomIndex, 1, 0])
 
     def _do_test(self):
-        pass
+        now = time.time()
+        if self.isEnterRoom and len(self.bossMap.keys()) > 0:
+            try:
+                bossInfo = None
+                for key, info in self.bossMap.items():
+                    # if now < info["createdTime"] + self.BOSS_LIVE_TIME and now > info["createdTime"] + 5000:
+                    if now < info["createdTime"] + self.BOSS_LIVE_TIME:
+                        bossInfo = info
+                        break
 
+                if not bossInfo is None:
+                    index = bossInfo["index"]
+                    self.currBossIndex = index
+                    self.add_command("ReqFruitAttack", [index, self.bulletIndex, ""])
+
+                    self.add_command("ReqFruitHit", [self.bulletIndex, index])
+
+                    self.__next_bulet()
+
+                # 道具使用
+                self.shotItemCD += super()._get_ticket()
+                if self.shotItemCD > 30:
+                     self.shotItemCD = 0
+                     # 使用狂暴
+                     self.add_command("ReqFruitShotItem", [1])
+
+            except RuntimeError as e:
+                print("AllRoomAllFishForceModule _do_test error")
+            finally:
+                pass
 
     def handle_receive(self, protocal_name: str, res: dict):
-        if protocal_name.find("ResLoginAccount") != -1:
+        if protocal_name.find("ResLoginAccount") != -1 or protocal_name.find("ResRegisterTourist") != -1:
             self.playerId = res["playerInfo"]["playerId"]
-            self.add_command("ReqGiveMeItems", [
-                {"1001": 10000000000, "1006": 100000000, "6001": 100000000, "6113": 100000000, "4001": 9999},
-                helper.KEY, self.playerId])
-
-            maxCannonMultiple = res["playerInfo"]["maxCannonMultiple"]
-            if maxCannonMultiple < 500000:
-                # 升级炮倍
-                self.add_command("ReqOBUnlockCannonLv", [50000, True])
-                time.sleep(1)
-                # 切换到50000炮倍
-                self.add_command("ReqFruitChangeMultiple", [50000])
+            self.gold = res["playerInfo"]["gold"]
+            self.maxCannonMultiple = res["playerInfo"]["maxCannonMultiple"]
         elif protocal_name.find("ResEnterFruitRoom") != -1:
-            print(f" player:" + self.playerId + " 进入桌子 开始打鱼..")
-            # TODO
-            # self.add_command("ReqFruitChangeMultiple", [50000])
+            tableId = res["info"]["tableId"]
+            print(f" player: {self.playerId} 进入桌子 {tableId} 开始打鱼..")
+            # 水果房间同步
+            self.add_command("ReqFruitSynchGame", [])
 
+            self.isEnterRoom = True
+        elif protocal_name.find("ResFruitSynchGame") != -1:
+            for info in res["bossInfoList"]:
+                self.bossMap[info["index"]] = info
+        elif protocal_name.find("PushFruitBossShow") != -1:
+            info = res["bossInfo"]
+            self.bossMap[info["index"]] = info
 
+            now = time.time()
+            for key, info in self.bossMap.items():
+                if now >= info["createdTime"] + self.BOSS_LIVE_TIME:
+                    del (self.bossMap[key])
+        elif protocal_name.find("PushFruitAllBossDie") != -1:
+            index = res["index"]
+            if index in self.bossMap:
+                del (self.bossMap[index])
+        elif protocal_name.find("ResFruitAttack") != -1:
+            # 鱼id 不存在
+            if res["requestResult"] == 10121:
+                if self.currBossIndex in self.bossMap:
+                    del (self.bossMap[self.currBossIndex])
+            # 子弹id错误
+            elif res["requestResult"] == 10940:
+                print(f"子弹id有误 playerId = {self.playerId} bulletIndex = {self.bulletIndex}")
+                self.__next_bulet()
+        elif protocal_name.find("ResFruitHit") != -1:
+            # 桌子不存在
+            if res["requestResult"] == 10920:
+                self.bossMap.clear()
+                # 重新进房间
+                self.add_command("ReqEnterFruitRoom", [self.roomIndex, 1, 0])
+            elif res["requestResult"] == 1:
+                if res["resStatus"] != 0 and res["index"] != -1:
+                    index = res["index"]
+                    if index in self.bossMap:
+                        del (self.bossMap[index])
 
     def __next_bulet(self):
         if self.bulletIndex == sys.maxsize:
             self.bulletIndex = 0
         else:
             self.bulletIndex += 1
+
+
+"""
+全房间只打BOSS
+"""
+class AllRoomOnlyBossForceModule(AllRoomAllFishForceModule):
+    def handle_receive(self, protocal_name: str, res: dict):
+        if protocal_name.find("PushFruitBossShow") != -1:
+            bossInfo = res["bossInfo"]
+            bossSize = bossInfo["bossSize"]
+            if bossSize == 3 or bossSize == 4:
+                self.bossMap[bossInfo["index"]] = bossInfo
+
+            now = time.time()
+            for key, bossInfo in self.bossMap.items():
+                if now >= bossInfo["createdTime"] + 100000:
+                    del (self.bossMap[key])
+        else:
+            super().handle_receive(protocal_name, res)
 
 
 if __name__ == '__main__':

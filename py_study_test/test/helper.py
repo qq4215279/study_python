@@ -262,19 +262,19 @@ class RecordInfo:
             t = self.endTime - self.startTime
             start = datetime.datetime.fromtimestamp(self.startTime)
             end = datetime.datetime.fromtimestamp(self.endTime)
-            file.writelines(f"1. 压测开始时间：{start}, 压测结束时间：{end}, 总耗时：{t} 秒\n")
-            file.writelines(f"2. 压测模块有如下： \n")
+            file.writelines(f"1. 压测开始时间: {start}, 压测结束时间: {end}, 总耗时: {t} 秒\n")
+            file.writelines(f"2. 压测模块有如下:  \n")
             str = ""
             for protocal_name in self.force_modules_record_dict:
                 value = self.force_modules_record_dict[protocal_name]
-                str += f"    {protocal_name}, 玩家数：{value}; "
+                str += f"    {protocal_name}, 玩家数: {value}; \n"
             file.writelines(f"{str}\n")
             file.writelines(f"3. 总请求次数: {self.total}, 请求失败总次数: {self.fail} , 失败协议汇总如下: \n")
             str = ""
             for protocal_name in self.fail_dict:
                 value = self.fail_dict[protocal_name]
                 if not value == 0:
-                    str += f"     {protocal_name}, 失败次数：{value}; "
+                    str += f"     {protocal_name}, 失败次数: {value}; "
             file.writelines(f"{str}\n")
 
             avgTime = int(self.avgTime)
