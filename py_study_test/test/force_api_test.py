@@ -255,6 +255,10 @@ class ForceModule(threading.Thread):
 战令压测模块
 '''
 class WarOrderForceModule(ForceModule):
+    @classmethod
+    def get_force_module_name(cls):
+        return "战令压测模块"
+
     def _do_before_test(self):
         pass
 
@@ -305,7 +309,12 @@ class AllRoomAllFishForceModule(ForceModule):
         self.bulletIndex = 0
         self.currBossIndex = -1
         self.bossMap = {}
-        self.roomIndex = random.randint(1, 5)
+        self.roomIndex = random.randint(2, 5)
+        self.tableId = 0
+
+    @classmethod
+    def get_force_module_name(cls):
+        return "全房间打鱼"
 
     def _do_before_test(self):
         if self.gold < 10000000000:
@@ -357,8 +366,8 @@ class AllRoomAllFishForceModule(ForceModule):
             self.gold = res["playerInfo"]["gold"]
             self.maxCannonMultiple = res["playerInfo"]["maxCannonMultiple"]
         elif protocal_name.find("ResEnterFruitRoom") != -1:
-            tableId = res["info"]["tableId"]
-            print(f" player: {self.playerId} 进入桌子 {tableId} 开始打鱼..")
+            self.tableId = res["info"]["tableId"]
+            print(f" player: {self.playerId} 进入桌子 {self.tableId} 开始打鱼..")
             # 水果房间同步
             self.add_command("ReqFruitSynchGame", [])
 
@@ -410,6 +419,10 @@ class AllRoomAllFishForceModule(ForceModule):
 全房间只打BOSS
 """
 class AllRoomOnlyBossForceModule(AllRoomAllFishForceModule):
+    @classmethod
+    def get_force_module_name(cls):
+        return "全房间只打BOSS"
+
     def handle_receive(self, protocal_name: str, res: dict):
         if protocal_name.find("PushFruitBossShow") != -1:
             bossInfo = res["bossInfo"]
@@ -423,6 +436,97 @@ class AllRoomOnlyBossForceModule(AllRoomAllFishForceModule):
                     del (self.bossMap[key])
         else:
             super().handle_receive(protocal_name, res)
+
+"""
+渔场加入1个陪玩机器人（1桌子1玩家1机器人）
+"""
+class OneRobotForceModule(AllRoomAllFishForceModule):
+    def __init__(self, force_task_callback):
+        super().__init__(force_task_callback)
+        # 加入陪玩机器人数量
+        self.count = 1
+
+    @classmethod
+    def get_force_module_name(cls):
+        return "渔场加入1个陪玩机器人（1桌子1玩家1机器人）"
+
+    # 设置陪玩机器人数量
+    def _set_count(self, count):
+        self.count = count
+
+    def _do_before_test(self):
+        if self.gold < 10000000000:
+            self.add_command("ReqGiveMeItems", [{"1001": 10000000000, "1006": 100000000, "6001": 100000000, "6113": 100000000, "4001": 9999}, helper.KEY, self.playerId])
+        if self.maxCannonMultiple < 500000:
+            # 升级炮倍
+            self.add_command("ReqOBUnlockCannonLv", [50000, True])
+            time.sleep(1)
+            # 切换到50000炮倍
+            self.add_command("ReqFruitChangeMultiple", [50000])
+        # 进房间 强制进入一个没人的桌子
+        self.add_command("ReqEnterFruitRoom", [self.roomIndex, 1, 2])
+
+    def handle_receive(self, protocal_name: str, res: dict):
+        if protocal_name.find("ResEnterFruitRoom") != -1:
+            self.tableId = res["info"]["tableId"]
+            print(f" player: {self.playerId} 进入桌子 {self.tableId} 开始打鱼..")
+            # 水果房间同步
+            self.add_command("ReqFruitSynchGame", [])
+
+            if self.count > 1:
+                # 设置桌子位置上限数量
+                param = f"SetFisheryTableSeatCount {self.roomIndex} 1 {self.tableId} {self.count}"
+                self.add_command("ReqFruitConsole", [param])
+
+            # 加入机器人命令
+            param = f"RobotJoinTable {self.roomIndex} 1 {self.tableId} {self.count}"
+            self.add_command("ReqFruitConsole", [param])
+
+            self.isEnterRoom = True
+        else:
+            super().handle_receive(protocal_name, res)
+
+"""
+渔场加入多个陪玩机器人（1桌子1玩家N机器人）
+"""
+class ManyRobotForceModule(OneRobotForceModule):
+    def __init__(self, force_task_callback):
+        super().__init__(force_task_callback)
+        # 加入陪玩机器人数量
+        super()._set_count(10000)
+
+    @classmethod
+    def get_force_module_name(cls):
+        return "渔场加入多个陪玩机器人（1桌子1玩家N机器人）"
+
+"""
+获取所有压测模块信息
+"""
+def get_all_force_module_info():
+    # 获取当前模块对象
+    current_module = inspect.currentframe().f_globals['__name__']
+    module = __import__(current_module)
+
+    # 获取当前模块中的所有成员
+    all_members = inspect.getmembers(module)
+    # 筛选出类对象
+    classes = [member[1] for member in all_members if inspect.isclass(member[1])]
+
+    res = ""
+    # 打印所有类的名称
+    for cls in classes:
+        class_name = cls.__name__
+        if not class_name.endswith("Module"):
+            continue
+        if class_name == "ForceModule":
+            continue
+
+        # 根据类名获取类对象
+        class_obj = globals()[class_name]
+        forceModuleName = class_obj.get_force_module_name()
+        res += f"{class_name}:{forceModuleName};"
+
+    return res
 
 
 if __name__ == '__main__':

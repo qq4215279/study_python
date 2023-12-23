@@ -2,6 +2,8 @@
 
 import configparser
 import json
+import os
+import sys
 import threading
 import datetime
 
@@ -22,7 +24,13 @@ def parse_config():
     # 创建一个 ConfigParser 对象
     config = configparser.ConfigParser()
     # 读取配置文件
-    config.read('./config/api.ini')
+    # config.read('./config/api.ini')
+    # 获取文件所在绝对路径
+    file_path = __file__
+    # 获取当前目录所在绝对了路径
+    dir_path = os.path.dirname(file_path)
+    # print("dir_path: ", dir_path)
+    config.read(f"{dir_path}/config/api.ini")
 
     # 遍历所有节
     for section in config.sections():
@@ -149,7 +157,7 @@ def __write_players_config(env: str, playerId: int, value: str):
     config.set(env, str(playerId), value)
 
     # 将修改后的配置写回文件
-    with open('./config/players.ini', 'w', encoding='utf-8') as configfile:
+    with open('config/players.ini', 'w', encoding='utf-8') as configfile:
         config.write(configfile)
 
 
