@@ -9,6 +9,11 @@ import datetime
 
 KEY = "qca5o036w3nwm3se5xuf0hqsbgj6184m==2jiicuucqcoxnihgr6ou24wmdf587yuv"
 
+# 获取 api.ini 配置文件所在位置
+API_INI_PATH = f"{os.path.dirname(__file__)}/config/api.ini"
+# 获取 players.ini 配置文件所在位置
+PLAYERS_INI_PATH = f"{os.path.dirname(__file__)}/config/players.ini"
+
 """
 帮助类
 """
@@ -24,13 +29,7 @@ def parse_config():
     # 创建一个 ConfigParser 对象
     config = configparser.ConfigParser()
     # 读取配置文件
-    # config.read('./config/api.ini')
-    # 获取文件所在绝对路径
-    file_path = __file__
-    # 获取当前目录所在绝对了路径
-    dir_path = os.path.dirname(file_path)
-    # print("dir_path: ", dir_path)
-    config.read(f"{dir_path}/config/api.ini")
+    config.read(API_INI_PATH)
 
     # 遍历所有节
     for section in config.sections():
@@ -50,8 +49,37 @@ def parse_config():
             else:
                 config_dict[option] = value
 
+    set_choose_server_config(config_dict)
+
     return config_dict
 
+# 设置服务器地址信息
+def set_choose_server_config(config_dict):
+    choose_server_config_prefix = config_dict["choose_server_config"]
+    if choose_server_config_prefix == 'test':
+        config_dict["ip"] = config_dict["test_ip"]
+        config_dict["port"] = config_dict["test_port"]
+        config_dict["env"] = config_dict["test_env"]
+    elif choose_server_config_prefix == 'formal_1':
+        config_dict["ip"] = config_dict["formal_1_ip"]
+        config_dict["port"] = config_dict["formal_1_port"]
+        config_dict["env"] = config_dict["formal_1_env"]
+    elif choose_server_config_prefix == 'formal_2':
+        config_dict["ip"] = config_dict["formal_2_ip"]
+        config_dict["port"] = config_dict["formal_2_port"]
+        config_dict["env"] = config_dict["formal_2_env"]
+    elif choose_server_config_prefix == 'force_stress_1':
+        config_dict["ip"] = config_dict["force_stress_1_ip"]
+        config_dict["port"] = config_dict["force_stress_1_port"]
+        config_dict["env"] = config_dict["force_stress_1_env"]
+    elif choose_server_config_prefix == 'force_stress_2':
+        config_dict["ip"] = config_dict["force_stress_2_ip"]
+        config_dict["port"] = config_dict["force_stress_2_port"]
+        config_dict["env"] = config_dict["force_stress_2_env"]
+    else:
+        config_dict["ip"] = config_dict["local_ip"]
+        config_dict["port"] = config_dict["local_port"]
+        config_dict["env"] = config_dict["local_env"]
 
 
 """
@@ -135,7 +163,7 @@ def __read_players_config(env: str):
     config = configparser.ConfigParser()
 
     # 读取配置文件
-    config.read('./config/players.ini', encoding='utf-8')
+    config.read(PLAYERS_INI_PATH, encoding='utf-8')
 
     # 遍历当前节中的所有配置项
     for option in config.options(env):
@@ -150,14 +178,41 @@ def __write_players_config(env: str, playerId: int, value: str):
     config = configparser.ConfigParser()
 
     # 读取配置文件
-    config.read('./config/players.ini', encoding='utf-8')
+    config.read(PLAYERS_INI_PATH, encoding='utf-8')
 
     if not config.has_section(env):
         config.add_section(env)
     config.set(env, str(playerId), value)
 
     # 将修改后的配置写回文件
-    with open('config/players.ini', 'w', encoding='utf-8') as configfile:
+    with open(PLAYERS_INI_PATH, 'w', encoding='utf-8') as configfile:
+        config.write(configfile)
+
+"""
+处理玩家账号脏数据
+"""
+def handle_dirty_players_config_data():
+    # 创建一个 ConfigParser 对象
+    config = configparser.ConfigParser()
+
+    # 读取配置文件
+    config.read(PLAYERS_INI_PATH, encoding='utf-8')
+
+    # 遍历所有节
+    for section in config.sections():
+        # 遍历当前节中的所有配置项
+        for option in config.options(section):
+            value = config.get(section, option)
+            # print(f" {option} = {value}")
+            value_dict = json.loads(value)
+            # 处理脏数据
+            if value_dict["isUsed"] == 1:
+                value_dict["isUsed"] = 0
+                value = json.dumps(value_dict)
+                config.set(section, option, value)
+
+    # 将修改后的配置写回文件
+    with open(PLAYERS_INI_PATH, 'w', encoding='utf-8') as configfile:
         config.write(configfile)
 
 
@@ -265,7 +320,11 @@ class RecordInfo:
 
     # 写日志
     def __write_log(self):
-        with open(r"./record.log", "a+", encoding='utf-8') as file:
+        file_path = __file__
+        # 获取当前目录所在绝对了路径
+        dir_path = os.path.dirname(file_path)
+        # with open(r"./record.log", "a+", encoding='utf-8') as file:
+        with open(rf"{dir_path}/record.log", "a+", encoding='utf-8') as file:
             file.writelines("本次压测结果汇总如下: \n")
             t = self.endTime - self.startTime
             start = datetime.datetime.fromtimestamp(self.startTime)

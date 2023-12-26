@@ -524,11 +524,13 @@ def get_all_force_module_info():
         # 根据类名获取类对象
         class_obj = globals()[class_name]
         forceModuleName = class_obj.get_force_module_name()
-        res += f"{class_name}:{forceModuleName};"
+        res += f"{forceModuleName}:{class_name};"
 
     return res
 
 
 if __name__ == '__main__':
+    helper.handle_dirty_players_config_data()
+    # 开始压测
     task = ForceTask()
     task.start()

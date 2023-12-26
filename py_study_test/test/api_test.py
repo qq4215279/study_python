@@ -61,21 +61,21 @@ class Task(threading.Thread):
                 self.account = player_dict["account"]
                 self.password = player_dict["password"]
                 self.client.send_msg_and_receive("ReqLoginAccount",
-                                                 [self.account, self.password, player_dict["channel"], "1.0.0"])
+                                                 [self.account, self.password, player_dict["channel"], config_dict["version"]])
             else:
                 # 注册
                 self.__register()
 
     # 注册
     def __register(self):
-        receive_dict = self.client.send_msg_and_receive("ReqRegisterTourist", ["test2", "1.0.0", "test22"])[0][1]
+        receive_dict = self.client.send_msg_and_receive("ReqRegisterTourist", ["test2", config_dict["version"], "test22"])[0][1]
         write_dict = {"isUsed": 1, "account": receive_dict['account'], "password": receive_dict['password'],
                       "channel": receive_dict['channel'], "playerId": receive_dict['playerInfo']["playerId"]}
         self.playerId = write_dict["playerId"]
         self.account = write_dict["account"]
         self.password = write_dict["password"]
         # 登录
-        self.client.send_msg_and_receive("ReqLoginAccount", [self.account, self.password, write_dict["channel"], "1.0.0"])
+        self.client.send_msg_and_receive("ReqLoginAccount", [self.account, self.password, write_dict["channel"], config_dict["version"]])
         helper.add_player_account(self.env, self.playerId, write_dict)
 
 
@@ -548,18 +548,15 @@ if __name__ == '__main__':
     # 刷新配置表  0: 服务器类型 1: 所有服务器; 3: hall; 4: game; 5: player; 6: platform    True: 测试服重新下载
     # task.add_command("ReqRefreshConfigTable", [1, False])
     # task.add_command("ReqRefreshConfigTable", [5, False])
-    task.add_command("ReqRefreshConfigTable", [1, True])
+    # task.add_command("ReqRefreshConfigTable", [1, True])
 
     # 获取功能状态  funcId
-    # start = int(time.time() * 1000)
-    # task.send_msg_and_receive("ReqFunctionStatus", [0])
-    # end = int(time.time() * 1000)
-    # print("avg: ", end - start)
+    task.add_command("ReqFunctionStatus", [0])
 
     # 请求给我发放一些道具
     # task.send_msg_and_receive("ReqGiveMeItems", [{"6201": 1000000}, helper.KEY, 10447])
     # task.send_msg_and_receive("ReqGiveMeItems", [{"6201": 1}, helper.KEY, 10446])
-    # task.send_msg_and_receive("ReqGiveMeItems", [{"6201": 10000000, "14006": 1000}, helper.KEY, 10468])
+    # task.send_msg_and_receive("ReqGiveMeItems", [{"6201": 10000000, "14006": 1000}, helper.KEY, 10468])-
 
     # 1. 获取战令信息
     # task.add_command("ReqGetPlayerWarOrderInfo", [])
