@@ -61,21 +61,21 @@ class Task(threading.Thread):
                 self.account = player_dict["account"]
                 self.password = player_dict["password"]
                 self.client.send_msg_and_receive("ReqLoginAccount",
-                                                 [self.account, self.password, player_dict["channel"], "1.0.0"])
+                                                 [self.account, self.password, player_dict["channel"], config_dict["version"]])
             else:
                 # 注册
                 self.__register()
 
     # 注册
     def __register(self):
-        receive_dict = self.client.send_msg_and_receive("ReqRegisterTourist", ["test2", "1.0.0", "test22"])[0][1]
+        receive_dict = self.client.send_msg_and_receive("ReqRegisterTourist", ["test2", config_dict["version"], "test22"])[0][1]
         write_dict = {"isUsed": 1, "account": receive_dict['account'], "password": receive_dict['password'],
                       "channel": receive_dict['channel'], "playerId": receive_dict['playerInfo']["playerId"]}
         self.playerId = write_dict["playerId"]
         self.account = write_dict["account"]
         self.password = write_dict["password"]
         # 登录
-        self.client.send_msg_and_receive("ReqLoginAccount", [self.account, self.password, write_dict["channel"], "1.0.0"])
+        self.client.send_msg_and_receive("ReqLoginAccount", [self.account, self.password, write_dict["channel"], config_dict["version"]])
         helper.add_player_account(self.env, self.playerId, write_dict)
 
 
@@ -93,8 +93,7 @@ class Task(threading.Thread):
 
             if len((all_commands)) <= 0:
                 # 超过3s没有任务，断开连接
-                # TODO
-                if t >= 5:
+                if t >= 3:
                     break
                 t += 1
                 time.sleep(1)
@@ -548,39 +547,49 @@ if __name__ == '__main__':
 
     # 刷新配置表  0: 服务器类型 1: 所有服务器; 3: hall; 4: game; 5: player; 6: platform    True: 测试服重新下载
     # task.add_command("ReqRefreshConfigTable", [1, False])
+    # task.add_command("ReqRefreshConfigTable", [5, False])
     # task.add_command("ReqRefreshConfigTable", [1, True])
 
     # 获取功能状态  funcId
-    # task.add_command("ReqFunctionStatus", [500500])
-    # 客户端请求某个商店的具体内容  funcId
-    # task.add_command("ReqShopGoods", [180800])
+    task.add_command("ReqFunctionStatus", [0])
 
     # 请求给我发放一些道具
-    # task.send_msg_and_receive("ReqGiveMeItems", [{"1107": 1000}, helper.KEY, 10358])
-    task.send_msg_and_receive("ReqGiveMeItems", [{"1001": 10000000000, "1006": 100000000, "6001": 100000000, "6113": 100000000, "4001": 9999}, helper.KEY, 10358])
-
+    # task.send_msg_and_receive("ReqGiveMeItems", [{"6201": 1000000}, helper.KEY, 10447])
+    # task.send_msg_and_receive("ReqGiveMeItems", [{"6201": 1}, helper.KEY, 10446])
+    # task.send_msg_and_receive("ReqGiveMeItems", [{"6201": 10000000, "14006": 1000}, helper.KEY, 10468])-
 
     # 1. 获取战令信息
     # task.add_command("ReqGetPlayerWarOrderInfo", [])
-    # 2. 请求领取战令通行证奖励
-    # task.add_command("ReqGetWarOrderPassCardReward", [])
-    # 3. 请求获取夏日寻访信息
-    # task.add_command("ReqGetSummerTourInfo", [])
-    # 4. 请求寻访  寻访类型: 1: 阳光海滩; 2: 泳池派对    次数
-    # task.add_command("ReqDrawSummerTour", [1, 1])
-    # 5. 请求领取寻访额外奖励  寻访类型: 1: 阳光海滩; 2: 泳池派对   序列
-    # task.add_command("ReqGetSummerTourExtraReward", [1, 1])
-    # 6. 请求获取夏日探宝信息
-    # task.add_command("ReqGetSummerTreasureInfo", [])
-    # 7. 请求夏日探宝  探宝类型: 1: 免费; 2: 普通; 3: 高级   探宝次数
-    # task.add_command("ReqDrawSummerTreasure", [1, 1])
-    # 8. 请求领取夏日探宝累计任务奖励  需要累计探宝次数
-    # task.add_command("ReqGetTreasureCumulateTaskReward", [4])
-    # 9. 请求获取战令任务信息
-    # task.add_command("ReqGetWarOrderTaskInfo", [])
 
-    # 10. 请求领取战令任务奖励  任务id: >0: 具体任务; -1: 每日任务可领奖列表; -2: 每周任务可领奖列表; -3: 每期任务可领奖列表
-    # task.add_command("ReqGetWarOrderTaskReward", [-1000])
+    # 渔场玩法 ---------------------------------------------------------------------->
+    # 1. 摇钱树信息
+    # task.send_msg_and_receive("ReqPrizePoolInfo", [0])
+
+    # 2. 请求获取龙宫献礼信息
+    # task.add_command("ReqGetDragonBlessInfo", [])
+    # 请求抽取龙宫献礼奖励  times: 献礼次数
+    # task.add_command("ReqDrawDragonBlessReward", [1])
+    # 请求获取龙宫献礼赐福奖励
+    # task.add_command("ReqGetDragonBlessReward", [])
+
+    # 3. 请求获取弹药库信息
+    # task.add_command("ReqGetAmmunitionInfo", [""])
+    # 请求抽取弹药库奖励  type: 1：普通弹药库，2：豪华弹药库；  times: 次数
+    # task.add_command("ReqDrawAmmunitionReward", [1, 10])
+
+    # 4. 请求获取渔场玩法排行榜  type 排行榜类型 1=猎妖 2=炼金    resetType 重置类型 1=日榜 2=周榜
+    # task.add_command("ReqGetFisheryPlayRankInfo", [2, 1])
+
+    # 黄金海妖抽奖 ---------------------------------------------------------------------->
+    # 设置黄金海妖玩家赏金值
+    # task.add_command("ReqFruitConsole", ["SetGoldenFishLottery 550"])
+    # 请求获取黄金海妖抽奖信息
+    # task.add_command("ReqGetGoldenFishLotteryInfo", [])
+    # 请求抽奖黄金海妖
+    # task.add_command("ReqDrawGoldenFishLottery", [])
+
+    # 使用道具
+    # task.add_command("ReqUseItem", [14006, 1])
 
 
 
