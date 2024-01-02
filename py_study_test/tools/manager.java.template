@@ -1,0 +1,83 @@
+{%- set className = tableToClass(tableName) -%}
+/*
+ * $Header: {{className}}Manager.java
+ * $Revision: 1.0.0.0 
+ * $CreateDate: 2011-12-14
+ * $ModifyDate: 2011-12-14 下午05:33:37
+ * $Owner: 
+ *
+ * Copyright (c) 2011-2012 Shanghai Reign Co. Ltd.
+ * All Right Reserved.
+ */
+package {{packageName}};
+
+
+import org.springframework.stereotype.Component;
+
+import {{basePackage}}.domain.{{className}};
+{% if idType == "Long" -%}
+import com.reign.framework.memorydb.BaseManager;
+
+/**
+ * {{className}}Manager
+ * @author   Auto-generated
+ * @version  1.0.0.0  2011-12-14 下午05:33:37
+ */
+@Component("{{ columnNameToFieldName(className + 'Manager') }}")
+public class {{className}}Manager extends BaseManager<{{className}}, {{idType}}> {
+    /**
+     * @see com.reign.framework.memorydb.BaseManager#doAfterPropertiesSet()
+     */
+    @Override
+    public void doAfterPropertiesSet() throws Exception {
+    }
+
+    /**
+     * @see com.reign.framework.memorydb.BaseManager#clearDataByPlayerId(int)
+     */
+    @Override
+    public void clearDataByPlayerId(long playerId) {
+    }
+
+    /**
+     * @see com.reign.framework.memorydb.BaseManager#loadDataByPlayerId(int)
+     */
+    @Override
+    public void loadDataByPlayerId(long playerId) {
+    }  
+}
+{% else -%}
+import com.reign.framework.memorydb.BaseManager;
+
+/**
+ * {{className}}Manager
+ * @author   Auto-generated
+ * @version  1.0.0.0  2011-12-14 下午05:33:37
+ */
+@Component("{{ columnNameToFieldName(className + 'Manager') }}")
+public class {{className}}Manager extends BaseManager<{{className}}, {{idType}}> {
+    /**
+     * @see com.reign.framework.memorydb.BaseManager#doAfterPropertiesSet()
+     */
+    @Override
+    public void doAfterPropertiesSet() throws Exception {
+    }
+
+    /**
+     * @see com.reign.framework.memorydb.BaseManager#clearDataByPlayerId(int)
+     */
+    @Override
+    public void clearDataByPlayerId(int playerId) {
+    }
+
+    /**
+     * @see com.reign.framework.memorydb.BaseManager#loadDataByPlayerId(int)
+     */
+    @Override
+    public void loadDataByPlayerId(int playerId) {
+    }  
+}
+{%- endif -%}
+
+
+

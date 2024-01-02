@@ -1,0 +1,327 @@
+output_dir: properties//sdata
+
+oss: 
+  access_key_id: sdf
+  access_key_secret: dsf
+  bucket_name: dsf
+  endpoint: sdfd
+
+db:
+  host: 10.9.200.244
+  user: root
+  password: qwert
+  db: cehua_sbtj_cn_sdata
+
+sync: 
+  dev_path: mob_sdata_dev
+  prod_path: mob_sdata_prod
+
+tables:
+  army_list: 
+    rowKey: id
+    fields:
+      - id
+      - army_list_id
+      - army_name
+  npc_unit2:
+    rowKey: id
+    fields:
+      - id
+      - name
+      - type
+      - quality
+      - type2
+      - init_star
+      - force_type
+      - pierce
+      - armour
+      - move_speed
+      - resi_blast
+      - hp
+      - hp_add
+      - dam
+      - dam_add
+      - reload_time
+      - clip_size
+      - hit
+      - range
+      - to_infantry_dam_p
+      - to_vehicle_dam_p
+      - to_shelter_dam_p
+      - pierce_p
+      - blast_radius
+      - need_people
+      - cost
+      - battle_point
+      - train_time
+      - pic
+      - features_intro
+      - force_features_intro
+      - intro
+      - weapon_name1
+      - bullet_name1
+      - abbr_name
+      - reform_type
+  resource_tips:
+    rowKey: type,index
+    fields:
+      - id
+      - type
+      - index
+      - quality
+      - name
+      - tips
+      - pic
+      - goto_str
+      - goto_str_name
+  item:
+    rowKey: type,index
+    fields:
+      - type
+      - index
+      - tab
+      - quality
+      - param1
+  structure:
+    rowKey: type,level
+    fields:
+      - type
+      - name
+      - intro
+      - pic
+      - effect
+      - effect_intro
+      - effect_special_intro
+      - coordinate_client
+      - location_y
+      - level
+      - effect_num_intro
+      - battle_point_add
+      - sign_icon
+      - sign_title
+      - sign_intro
+      - lv_diff_intro
+      - detail_client
+  task:
+    rowKey: id
+    fields:
+      - id
+      - type
+      - stage
+      - open_request
+      - intro
+      - goto_type
+      - goto_name
+      - goto_str
+      - pic
+      - name
+      - goto_aim
+  task_branch_head:
+    rowKey: head_id
+    fields:
+      - head_id
+      - head_name
+      - intro
+      - pic
+  task_branch:
+    rowKey: id
+    fields:
+      - id
+      - index_head
+      - index_subclass
+      - name
+      - intro
+      - goto_name
+      - goto_str
+      - pic
+  npc_unit_fate:
+    rowKey: fate_id
+    fields:
+      - fate_id
+      - name
+      - quality
+      - need_npc
+      - hit
+      - effect
+      - effect_adjust_param1
+      - skill_intro
+      - pic
+      - buff_id
+  npc_unit2_compose:
+    rowKey: unit_id
+    fields:
+      - unit_id
+      - compose_unit_id
+      - unit_line
+  npc_unit2_param:
+    rowKey: type
+    fields:
+      - type
+      - need_people
+      - positive_unit
+      - negative_unit
+  npc_unit2_features_intro:
+    rowKey: id
+    fields:
+      - id
+      - name
+      - intro
+  science:
+    rowKey: sci_type,level
+    fields:
+      - id
+      - tab
+      - sci_type
+      - name
+      - level
+      - need_yjs_lv
+      - condition
+      - location_x
+      - location_y
+      - cost
+      - time
+      - effect
+      - effect_intro
+      - battle_point_add
+      - icon
+      - intro
+  structure_header_client:
+    rowKey: type
+    fields:
+      - name
+      - type
+      - header_client
+  function_open:
+    rowKey: id
+    fields:
+      - id
+      - lv
+      - request
+      - type
+      - info
+      - condition_intro
+  guild_sci:
+    rowKey: guild_sci_type,level
+    fields:
+      - id
+      - tab
+      - guild_sci_type
+      - name
+      - level
+      - need_guild_lv
+      - condition
+      - location_x
+      - location_y
+      - need_guild_sci_point
+      - guild_cost
+      - individual_cost
+      - reward
+      - time
+      - effect
+      - effect_intro
+      - icon
+      - intro
+  city:
+    rowKey: id
+    fields:
+      - id
+      - name
+      - military
+      - vision
+      - hp
+      - level
+      - city_guild_name_client
+      - city_guild_pic_client
+      - city_pic
+  client_effect_intro:
+    rowKey: effect
+    fields:
+      - effect
+      - intro
+  guild_map_structure:
+    rowKey: type,level
+    fields:
+      - next_id
+      - name
+      - type
+      - level
+      - request
+      - max_num
+      - avoid_time
+      - time
+      - structure_hp
+      - visual
+      - cost
+      - effect
+      - pic
+      - intro1
+      - intro2
+  guild_task:
+    rowKey: id
+    fields:
+      - id
+      - type
+      - name
+      - intro
+      - request
+      - open_request
+      - goto_name
+      - goto_str
+      - pic
+      - goto_aim
+  factory_material:
+    rowKey: id
+    fields:
+      - id
+      - name
+      - index
+      - need_factory_lv
+  military_rank_score:
+    rowKey: id
+    fields:
+      - id
+      - index
+      - need_score
+      - name
+      - intro
+  commander:
+    rowKey: id
+    fields:
+      - id
+      - name
+      - att
+      - att_add
+      - def
+      - def_add
+      - s_att
+      - s_att_add
+      - s_def
+      - s_def_add
+      - skill1
+      - skill2
+      - skill3
+      - skill4
+      - info_intro
+      - tx_intro
+      - intro
+      - pic
+      - goto_str
+      - tx_intro
+  commander_skill:
+      rowKey: id
+      fields:
+        - id
+        - name
+        - action
+        - quality
+        - intro
+        - pic
+        - book_pic
+        - effect
+        - effect_add
+  commander_lv:
+      rowKey: id
+      fields:
+        - id
+        - commander_lv
+        - exp

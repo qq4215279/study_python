@@ -1,0 +1,1 @@
+select concat('truncate table ', table_name, ';') from information_schema.tables where table_schema = 'xed_sbtj_cn_game' and table_type = 'base table' and table_name <> 'db_version';

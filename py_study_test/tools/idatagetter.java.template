@@ -1,0 +1,21 @@
+{{ headerContent }}
+
+{{ importContent }}
+import {{ daoPackage }};
+
+{{ classContent }}
+
+    // Auto-generated Code Start Don't Modify
+    {{ autoContent }}    
+   
+   /**
+    * @return {{ daoName }}
+    * $Date: 2016年10月11日 下午8:58:18
+    */
+    {{ daoName }} get{{ daoName }}();
+    // Auto-generated Code End Don't Modify
+
+    {{ leftContent }}
+
+
+

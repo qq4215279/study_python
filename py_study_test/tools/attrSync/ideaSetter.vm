@@ -1,0 +1,26 @@
+#set($paramName = $helper.getParamName($field, $project))
+#if($field.modifierStatic)
+static ##
+#end
+void set$StringUtil.capitalizeWithJavaBeanConvention($StringUtil.sanitizeJavaIdentifier($helper.getPropertyName($field, $project)))($field.type $paramName) {
+#if($field.type == "java.lang.String")
+if ($paramName##
+.equalsIgnoreCase(this.$field.name)) {
+return;
+}
+#elseif($field.type == "char" || $field.type == "boolean" || $field.type == "byte" || $field.type == "int" || $field.type == "short" || $field.type == "long" || $field.type == "double" || $field.type == "float")
+if ($paramName##
+==this.$field.name) {
+return;
+}
+#end
+#if ($field.name == $paramName)
+    #if (!$field.modifierStatic)
+    this.##
+    #else
+        $classname.##
+    #end
+#end
+$field.name = $paramName;
+pushChange("$field.name");
+}
