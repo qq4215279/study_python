@@ -170,7 +170,7 @@ def convert(
 def doTable(db, util, datagetterpath, datagetterName, config):
     tableName = config['tableName']
     path = config['path']
-    print "handle table", tableName
+    print("handle table", tableName)
 
     tabledesc = util.query(COLUMN_INFO % (db, tableName))
     filepath = os.path.join(sys.path[0], path, "domain\\")

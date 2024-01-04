@@ -1,0 +1,54 @@
+
+# 3.1.1 string渲染
+age: {{age}}
+Hello {{out}}
+
+# 3.1.2. 字典渲染:
+my_dict.name: {{ my_dict.name }}
+description: {{ my_dict.description }}
+ip address: {{ my_dict.ip_address }}
+speed: {{ my_dict.speed }}
+duplex: {{ my_dict.duplex }}
+mtu: {{ my_dict.mtu }}
+# 3.1.2. user 信息渲染
+userName: {{user.userName}}
+password: {{user.password}}
+age: {{user.age}}
+
+
+
+# 3. 模板语法
+# 3.2.1. if用法
+{% if age >= 10 %}
+    年纪大于10
+{% elif age >= 50 %}
+    年纪大于10
+{% else %}
+    年纪小于0！
+{% endif %}
+
+# 3.2.2. for循环
+{% for user in users %}
+    {{loop.index}}
+    <li>{{ user.userName | title }}</li>
+{% else %}
+    我是 for 最后的 else
+
+{% endfor %}
+
+
+# 3.2.3. 迭代字典
+{% for key, value in user.items() %}
+    key: {{key}}, value: {{value}}
+{% endfor %}
+
+# 3.3. 注释
+{# 我是注释 #}
+
+
+# 4. 过滤器
+渲染时值不转义 {{out | safe}}
+转小写 {{out | lower}}
+转大写 {{out | upper}}
+每个单词首字母转大写 {{out | title}}
+去收尾空格 {{out | trim}}
