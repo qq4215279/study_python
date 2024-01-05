@@ -47,7 +47,7 @@ print("------------------------------------>")
     list2 = list * n        增加元素            乘法扩展，使用乘法扩展列表，生成一个新列表，新列表元素时原列表元素的多次重复。
     
     list.remove(x)          删除元素            在列表 list 中删除首次出现的指定元素 x
-    list.pop(index)       删除元素            删除并返回列表 list 指定为止 index 处的元素，默认是最后一个元素
+    list.pop(index)         删除元素            删除并返回列表 list 指定为止 index 处的元素，默认是最后一个元素
     del list[index]         删除元素            del list[1]
     list.clear()            删除所有元素        删除列表所有元素，并不是删除列表对象
    

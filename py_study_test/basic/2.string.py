@@ -86,6 +86,10 @@ print(str1)
 print(str2)
 print(str2[1])
 
+# 4. index 找不到子串跑异常
+indexStr = "liuzhen"
+# print("index test: ", indexStr.index("刘"))
+
 
 # 字符串切片slice操作
 def sliceTest():

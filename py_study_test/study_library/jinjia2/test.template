@@ -28,13 +28,10 @@ age: {{user.age}}
 {% endif %}
 
 # 3.2.2. for循环
-{% for user in users %}
-    {{loop.index}}
-    <li>{{ user.userName | title }}</li>
-{% else %}
-    我是 for 最后的 else
-
-{% endfor %}
+{%- for user in users %}
+    <li>{{loop.index}}  {{ user.userName | title }}</li>
+{%- else %}
+{%- endfor %}
 
 
 # 3.2.3. 迭代字典

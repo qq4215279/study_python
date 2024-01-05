@@ -51,10 +51,8 @@ os 模块 - 调用操作系统命令
 os.walk()方法：返回一个 3 个元素的元组，(dirpath, dirnames, filenames), 
     dirpath：要列出指定目录的路径
     dirnames：目录下的所有文件夹
-    filenames：目录下的所有文件
+    filenames：目录下的所有文件    
 """
-
-
 def walk_demo():
     all_dirs = []
     all_files = []
@@ -96,3 +94,6 @@ def walk_demo():
 
 # 16. linesep
 print(repr(os.linesep))  # windows -> \r\n   linux -> \n
+
+# 17. getlogin()  获取系统登录用户
+print(os.getlogin())

@@ -18,19 +18,24 @@ jinjia2包: 作为一个模板系统，它还提供了特殊的语法，我们�
     1.2. 创建带有数据的文件模板: 使用文件系统加载模板。
         步骤如下: 
             # 1. 创建一个加载器对象，指定模板文件所在的目录
-            loader = FileSystemLoader('templates')
+            loader = FileSystemLoader('./')
             # 2. 创建一个环境对象，指定加载器
             env = Environment(loader=loader)
             # 3. 通过环境对象获取模板
-            template = env.get_template('hello.html')
+            template = env.get_template('test.template')
 
 2. 渲染模板: template.render(): 接受变量，对模板进行渲染，返回被渲染的模板信息。
     str = template.render()
+    
+    # 写入文件中
+    with open('./demo.txt', 'wb') as file:
+        file.write(result.encode('utf8'))
 
 3. 模板语法:
     3.1. 变量取值: {{ }}
         它是一种特殊的占位符。当利用jinja2进行渲染的时候，它会把这些特殊的占位符进行填充/替换，jinja2支持python中所有的Python数据类型比如列表、字段、对象等。
     3.2. 控制结构 {% %}
+            注: {%- %} 表示后续不换行。{%  -%} 表示前面不换行
         3.2.1. if条件: if语句类似与Python的if语句，它也具有单分支，多分支等多种结构，不同的是，条件语句不需要使用冒号结尾，而结束控制语句，需要使用endif关键字。
             {% if daxin.safe %}
                 daxin is safe.
@@ -51,7 +56,7 @@ jinjia2包: 作为一个模板系统，它还提供了特殊的语法，我们�
                 loop.revindex0	到循环结束的次数(从0开始）
             3.2.2.1. 迭代列表:
                 {% for user in users %}
-                    <li>{{ user.username|title }}</li>
+                    <li> {{loop.index}} {{ user.username|title }}</li>
                 {% endfor %}
             3.2.2.2. 迭代字典:
                 # 方式1: items()
@@ -67,7 +72,8 @@ jinjia2包: 作为一个模板系统，它还提供了特殊的语法，我们�
                         {{ key }} {{ value}}
                     {% endfor %}
                 
-    3.3. 注释: {# #}  eg: {# 我是注释 #} 
+            注: {%- for  表示循环开始不换行       {%- endfor %}  表示每次循环后不换行  {%- if} 同理！
+    3.3. 注释: {# #}  eg: {# 我是注释 #}
 
 4. 过滤器: 变量可以通过“过滤器”进行修改，过滤器可以理解为是jinja2里面的内置函数和字符串处理函数。
     4.1. 使用方式: 只需要在变量后面使用管道(|)分割，多个过滤器可以链式调用，前一个过滤器的输出会作为后一个过滤器的输入。eg: {{ 'abc' | captialize  }}
@@ -137,11 +143,11 @@ my_dict = {
 
 # 1.1 创建字符串模板
 strTemplate = Template(template)
-print(strTemplate.render(data))
+# print(strTemplate.render(data))
 
 # 1.2. 创建带有数据的文件模板
 # 1.2.1. 创建一个加载器对象，指定模板文件所在的目录
-loader = FileSystemLoader('F:\Code\PythonSpace\study_python\py_study_test\study_library\jinjia2', encoding='gbk')
+loader = FileSystemLoader('./', encoding='gbk')
 # 1.2.2. 创建一个环境对象，指定加载器
 env = Environment(loader=loader)
 # 1.2.3. 通过环境对象获取模板
@@ -152,7 +158,5 @@ age = 9999
 result = template.render(out=out, users=users, my_dict=my_dict, user=user, age=age)
 
 # 写入文件中
-domainfile = open('F:\Code\PythonSpace\study_python\py_study_test\study_library\jinjia2\demo.txt', 'wb')
-domainfile.write(result.encode('utf8'))
-domainfile.flush()
-domainfile.close()
+with open('./demo.txt', 'wb') as file:
+    file.write(result.encode('utf8'))
