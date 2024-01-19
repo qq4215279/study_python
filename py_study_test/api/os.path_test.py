@@ -14,7 +14,7 @@ os.path 模块提供了目录相关（路径判断、路径切分、路径连接
 # 2. os.path.isfile(path)  判断 path 是否为文件
 # print(os.path.isfile("d:/a.txt"))  # 是否文件
 
-# 3. os.path.exists(path)  判断指定路径的文件是否存在
+# 3. os.path.exists(path)  判断指定路径的文件或目录是否存在
 # print(os.path.exists("d:/a.txt"))  # 文件是否存在
 
 # 4. os.path.getsize(filename)  返回文件的大小
