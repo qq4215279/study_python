@@ -35,7 +35,10 @@ sys 是 Python 标准库中的一个模块，提供了访问 Python 解释器的
     eg: 需要引用 F:\Code\PythonSpace\study_python\py_study_test\daily\command.py
         sys.path.append('F:\Code\PythonSpace\study_python\py_study_test\daily')
 
-9. 其他    
+9. 可使用的最大整数
+    print(sys.maxsize)
+
+其他    
     # sys.modules.keys() 返回所有已经导入的模块列表
     # sys.exc_info() 获取当前正在处理的异常类,exc_type、exc_value、exc_traceback当前处理的异常详细信息
     # sys.hexversion 获取Python解释程序的版本值，16进制格式如：0x020403F0
