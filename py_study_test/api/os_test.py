@@ -68,7 +68,7 @@ os.walk()方法：返回一个 3 个元素的元组，(dirpath, dirnames, filena
 # 16. linesep
 print(repr(os.linesep))  # windows -> \r\n   linux -> \n
 
-# 17. getlogin()  获取系统登录用户
+# 17. getlogin()  获取系统登录用户（获取在进程的控制终端上登录的用户的名称。）
 print(os.getlogin())
 
 
