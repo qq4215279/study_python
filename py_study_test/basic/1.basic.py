@@ -154,3 +154,10 @@ print("a is b:", a is b)
 c = copy.deepcopy(a)
 print("a == c:", a == c)
 print("a is c:", a is c)
+
+
+"""
+排序  sorted(dst_list, key=function_name)
+dst_list 需要排序的列表
+key 参数用于指定一个函数，该函数将应用于列表中的每个元素，用于提取进行比较的关键字段。
+"""

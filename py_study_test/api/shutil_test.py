@@ -7,9 +7,12 @@ shutil 模块是 python 标准库中提供的，主要用来做文件和文件�
 os 模块提供了对目录或文件的一般操作。shutil 模块作为补充，提供了移动、复制、压缩、解压等操作，这些 os 模块都没有提供
 """
 
-# copy 文件内容
+# 1. shutil.copyfile(src, dst)  文件内容
 shutil.copyfile("file/a.txt", "a_copy.txt")
-
 # 实例：实现递归的拷贝文件夹内容
 # "音乐"文件夹不存在才能用。
 # shutil.copytree("电影/学习", "音乐", ignore=shutil.ignore_patterns("*.html", "*.htm"))
+
+
+# 2. shutil.rmtree(dir)  递归删除所在目录的所有文件
+# shutil.rmtree(xml_dir)

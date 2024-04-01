@@ -48,3 +48,51 @@ print("解析后的数据：", unpacked_data)
 print(unpacked_data[0])
 print(unpacked_data[0].decode())
 
+
+
+"""
+编码 int 类型
+"""
+def encode_int_2_bytes(size, num):
+    if num is None:
+        num = 0
+
+    return num.to_bytes(size, "big")
+    # if num >= 0:
+    #     return num.to_bytes(size, "big")
+    # else:
+    #     return num.to_bytes(size, "big", True)
+
+"""
+读 int 类型
+int.from_bytes() 是 Python 内置的一个方法，用于将字节序列（bytes）转换为整数。这在处理二进制数据时非常有用，特别是在网络通信、文件读写等领域。
+该方法的使用方式是调用 int.from_bytes(bytes, byteorder, signed=False)，其中：
+    bytes 是要转换的字节序列。
+    byteorder 指定字节序列的字节顺序，可以是 'big'（大端序，高位在前）或 'little'（小端序，低位在前）。
+    signed 是一个可选参数，用于指定是否将结果解释为有符号整数。默认为 False，即将结果解释为无符号整数。
+"""
+def decode_bytes_2_int(read_size, stream):
+    byte_val = stream.read(read_size)
+    value = int.from_bytes(byte_val, "big")
+    return value
+
+if __name__ == '__main__':
+    size = 4
+    num = 100
+
+    bytesArr = struct.pack(">i", num)
+    # print(encode_int_2_bytes(size, num))
+    print("i: ", struct.pack("i", num))
+    print(">i: ", struct.pack(">i", num))
+
+    print("I: ", struct.pack("I", num))
+    print(">I: ", struct.pack(">I", num))
+    print(bin(100))
+
+    print("----------->")
+    print(">i: ", struct.unpack(">i", bytesArr))
+    print(">i: ", struct.unpack(">i", b"\x00\x00\x00\x00"))
+
+    print(">i: ", struct.unpack(">i", b'\x00\x00\x00\x00'))
+
+    print(">i: ", struct.unpack(">i", b'\x7f\xd2\x00\x00'))
