@@ -60,11 +60,11 @@ def set_choose_server_config(config_dict):
         config_dict["ip"] = config_dict["test_ip"]
         config_dict["port"] = config_dict["test_port"]
         config_dict["env"] = config_dict["test_env"]
-    elif choose_server_config_prefix == 'formal_1':
+    elif choose_server_config_prefix == 'formal_test_1':
         config_dict["ip"] = config_dict["formal_1_ip"]
         config_dict["port"] = config_dict["formal_1_port"]
         config_dict["env"] = config_dict["formal_1_env"]
-    elif choose_server_config_prefix == 'formal_2':
+    elif choose_server_config_prefix == 'formal_test_2':
         config_dict["ip"] = config_dict["formal_2_ip"]
         config_dict["port"] = config_dict["formal_2_port"]
         config_dict["env"] = config_dict["formal_2_env"]

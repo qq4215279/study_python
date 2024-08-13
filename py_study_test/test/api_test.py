@@ -61,21 +61,21 @@ class Task(threading.Thread):
                 self.account = player_dict["account"]
                 self.password = player_dict["password"]
                 self.client.send_msg_and_receive("ReqLoginAccount",
-                                                 [self.account, self.password, player_dict["channel"], config_dict["version"]])
+                                                 [self.account, self.password, player_dict["channel"], config_dict["version"], 0])
             else:
                 # 注册
                 self.__register()
 
     # 注册
     def __register(self):
-        receive_dict = self.client.send_msg_and_receive("ReqRegisterTourist", ["test2", config_dict["version"], "test22"])[0][1]
+        receive_dict = self.client.send_msg_and_receive("ReqRegisterTourist", ["test2", config_dict["version"], 0, "test22", 24013002])[0][1]
         write_dict = {"isUsed": 1, "account": receive_dict['account'], "password": receive_dict['password'],
                       "channel": receive_dict['channel'], "playerId": receive_dict['playerInfo']["playerId"]}
         self.playerId = write_dict["playerId"]
         self.account = write_dict["account"]
         self.password = write_dict["password"]
         # 登录
-        self.client.send_msg_and_receive("ReqLoginAccount", [self.account, self.password, write_dict["channel"], config_dict["version"]])
+        self.client.send_msg_and_receive("ReqLoginAccount", [self.account, self.password, write_dict["channel"], config_dict["version"], 0])
         helper.add_player_account(self.env, self.playerId, write_dict)
 
 
@@ -97,6 +97,8 @@ class Task(threading.Thread):
                     break
                 t += 1
                 time.sleep(1)
+                # 保持心跳
+                self.send_msg_and_receive("ReqKeepAlive", [True])
                 continue
 
             t = 0
@@ -121,8 +123,73 @@ class Task(threading.Thread):
     """
     发送指令且接受回复
     """
-    def send_msg_and_receive(self, protocol_name: str, params: list):
+    def send_msg_and_receive(self, protocol_name, params):
         return self.client.send_msg_and_receive(protocol_name, params)
+
+
+    """
+    购买月卡商城礼包
+    """
+    def buy_month_card(self, goodsId: int):
+        self.buy_gift("monthcard", goodsId)
+
+    """
+    购买礼包商城礼包
+    """
+    def buy_charge_gift(self, goodsId: int):
+        self.buy_gift("chargegift", goodsId)
+
+    """
+    购买svip商城礼包
+    """
+    def buy_svip_card(self, goodsId: int):
+        self.buy_gift("svip", goodsId)
+
+    """
+    购买金币商城礼包
+    """
+    def buy_gold_mail(self, goodsId: int):
+        self.buy_gift("gold", goodsId)
+
+    """
+    购买点券商城礼包
+    """
+    def buy_stamps_mail(self, goodsId: int):
+            # 增加人民币
+            self.send_msg_and_receive("ReqGiveMeItems", [{"1004": 10000}, helper.KEY, 0])
+            # TODO 不能通过点券方式购买！
+            self.buy_gift("stamps", goodsId)
+
+
+    """
+   下单购买礼包
+   shop_name: monthcard-月卡商店; chargegift-礼包商店; svip-大会员储值; (gold-金币商店; stamps-点券)
+       (gold-金币商店; flashSale-限时抢购商店; diamond-钻石商店; turret-炮塔商店; item-金币商店; gold-金币商店; monthcard-月卡商店; 
+              chargegift-礼包商店; stamps-点券; winTreasure-1元夺宝商店; keyGift-幸运返利商店; guideActivity-指南商店; dailyTreasure-每日寻宝商店; 
+              seaToken-至尊海神令商店; seckill-限时秒杀; week-周礼包; month-月礼包; bankrupt-破产补助; carnialLuckDraw-嘉年华幸运转盘; purchaseGift-全服抢购; 
+              optionalGift-自选礼包; specialGift-特殊礼包; vip-vip专属礼包; svip-大会员储值; carnialLuckDraw-嘉年华幸运转盘; purchaseGift-全服抢购; )
+   """
+    def buy_gift(self, shop_name: str, goodsId: int):
+        # 设备信息
+        deviceInfo = """
+        {"oaid":"","firstInstallTime":1717638652111,"model":"MI 9","type":"android","package_name":"com.yaoji.yjby.gf",
+			"android_id":"c02d858964d1d669","IMEI":"IXiaomi_MI-9","phone_number":"","applicationInfo":{"name":"com.yaoji.GameApplication","targetSdkVersion":30,
+			"dataDir":"/data/user/0/com.yaoji.yjby.gf","nativeLibraryDir":"/data/app/com.yaoji.yjby.gf-yZUUarn8sC6S6MpYPQrfxA==/lib/arm"},
+			"version_code":24042802,"lastUpdateTime":1717638652111,"is_first_run":true,"version_name":"9.2.1.0","app_name":"hlby3D","brand":"Xiaomi",
+			"install_tag":"1720084661","IMSI":"","performance_type":"High","is_support_astc":true}
+        """
+
+        receive_dict = self.send_msg_and_receive("ReqStampsBuyGoods", {"shop": shop_name, "goods": goodsId, "fromType": 0, "logFrom": 1,
+                                                                     "orderExtraInfo": {"extraInfo":"", "deviceInfo": deviceInfo}})
+
+        if "errorTips" in receive_dict[0][1] and receive_dict[0][1]["errorTips"].find("点券不足") != -1:
+            # 增加点券
+            self.add_command("ReqGiveMeItems", [{"1015": 10000}, helper.KEY, 0])
+            self.add_command("ReqStampsBuyGoods", {"shop": shop_name, "goods": goodsId, "fromType": 0, "logFrom": 1,
+                                                   "orderExtraInfo": {"extraInfo":"", "deviceInfo": deviceInfo}})
+
+
+
 
     """
     关闭连接
@@ -173,23 +240,40 @@ class Client:
     """
     发送消息 并接收
     """
-    def send_msg_and_receive(self, protocol_name="", params=[]) -> []:
+    def send_msg_and_receive(self, protocol_name, params) -> []:
         self.__send_msg(protocol_name, params)
         return self.__receive(protocol_name)
 
     """
     发送消息
     """
-    def __send_msg(self, protocol_name="", params=[]):
+    def __send_msg(self, protocol_name, params):
         if not self.__is_connect():
             raise RuntimeError("未连接上服务器！")
-
 
         # 记录发送时间
         self.__set_name_alltimes_dict(protocol_name, self.__getMilliseconds())
 
+        # 将参数的数组类型转为字典类型
+        if isinstance(params, list):
+            params = self.__convert2dict(protocol_name, params)
+
         # 发送
         self.socket.send(self.__encode_send_param(protocol_name, params))
+
+    # 转换params为字典
+    def __convert2dict(self, protocol_name: str, params: list) -> dict:
+        res = {}
+        i = 0
+        for schema in protocol_schemas_dict[protocol_name]:
+            if schema["type"].endswith("*"):
+                continue
+
+            field_ = schema["field"]
+            res[field_] = params[i]
+            i += 1
+
+        return res
 
     """
     接受消息
@@ -278,7 +362,7 @@ class Client:
         print("与服务器断开连接~")
 
     # 获取发送字节数组
-    def __encode_send_param(self, protocol_name="", params=[]):
+    def __encode_send_param(self, protocol_name="", paramsJ={}):
         if not protocol_name.startswith("Req"):
             raise ValueError("请求类型错误！")
         if not protocol_name in protocol_schemas_dict:
@@ -291,33 +375,99 @@ class Client:
         # 协议id
         data += struct.pack(">i", protocol_id)
 
-        i = 0
-        for schema in protocol_schemas_dict[protocol_name]:
-            type = schema["type"]
-
-            param = params[i] if len(params) > i else None
-            i += 1
-            data += self.__do_encode_send_param(type, param)
+        # 拼参数
+        data += self.__do_encode_send_param(protocol_name, paramsJ)
 
         # 总长度
         totalLen = struct.pack(">i", len(data))
         return totalLen + data
 
     # do 获取发送字节数组
-    def __do_encode_send_param(self, type, param):
+    def __do_encode_send_param(self, protocol_name="", paramsJ={}):
         data = b""
-        if type.endswith("[]"):
-            type = type[:len(type) - 2]
 
-            # 数组长度
-            len = len(param)
-            data += struct.pack(">i", len)
+        # 可选协议参数类型
+        if protocol_name.endswith("*"):
+            protocol_name = protocol_name[:len(protocol_name) - 1]
+            # 没有传，则直接填充0
+            if protocol_name not in paramsJ:
+                # 默认填充
+                data += struct.pack(">b", 0)
+                return data
 
-            for i in range(len):
-                data += self.__encode_param(type, param)
+        # 解析协议，拼接传入参数
+        for schema in protocol_schemas_dict[protocol_name]:
+            singleData = b""
+            type = schema["type"]
+            field = schema["field"]
 
-        else:
-            data += self.__encode_param(type, param)
+            # 是否为数组参数
+            isArray = False
+            # 是否可选参数
+            isOption = False
+
+            if type.endswith("[]"):
+                type = type[:len(type) - 2]
+                isArray = True
+
+            # 可选参数
+            elif type.endswith("*"):
+                isOption = True
+
+
+            # XXX[]
+            # 数组
+            if isArray:
+                # 未传参
+                if field not in paramsJ:
+                    # 不是可选参数
+                    if not isOption:
+                        raise ValueError("缺少参数!!! type: " + type + " field: " + type)
+                    else:
+                        # 默认填充0
+                        singleData += struct.pack(">b", 0)
+                        data += singleData
+                        continue
+
+                singleParamsArrJ = paramsJ[field]
+                if not isinstance(singleParamsArrJ, list):
+                    raise ValueError("不是数组!!!")
+
+                length = len(singleParamsArrJ)
+                singleData += struct.pack(">i", length)
+
+                # 解析数组类型参数
+                for singleParams in singleParamsArrJ:
+                    singleData += self.__do_encode_send_param(type, singleParams)
+
+            else:
+                # 未传参
+                if field not in paramsJ:
+                    # 不是可选参数
+                    if not isOption:
+                        raise ValueError("缺少参数!!! type: " + type + " field: " + type)
+                    else:
+                        # 默认填充
+                        singleData += struct.pack(">b", 0)
+                        data += singleData
+                        continue
+
+
+                subParamsJ = paramsJ[field]
+
+                # 子协议
+                tmp_subType = type
+                if type.endswith("*"):
+                    tmp_subType = type[:len(type) - 1]
+
+                if tmp_subType in protocol_schemas_dict:
+                    singleData += self.__do_encode_send_param(type, subParamsJ)
+
+                # 基本数据结构
+                else:
+                    singleData += self.__encode_param(type, subParamsJ)
+
+            data += singleData
 
         return data
 
@@ -352,9 +502,6 @@ class Client:
                 dict_data += self.__encode_str_2_bytes(key)
                 dict_data += struct.pack(">q", value)
             value = dict_data
-        elif type.endswith("*"):
-            # TODO 完善！ * 情况 eg: "type":"ThirdParty*"
-            value = struct.pack(">b", 0)
 
         return value
 
@@ -542,55 +689,63 @@ class Client:
 
 
 if __name__ == '__main__':
-    # 本地
+    helper.handle_dirty_players_config_data()
     task = Task()
 
     # 刷新配置表  0: 服务器类型 1: 所有服务器; 3: hall; 4: game; 5: player; 6: platform    True: 测试服重新下载
     # task.add_command("ReqRefreshConfigTable", [1, False])
-    # task.add_command("ReqRefreshConfigTable", [5, False])
     # task.add_command("ReqRefreshConfigTable", [1, True])
+    # task.add_command("ReqRefreshConfigTable", [5, False])
+    # task.add_command("ReqRefreshConfigTable", [5, True])
 
-    # 获取功能状态  funcId
-    task.add_command("ReqFunctionStatus", [0])
+    # 获取功能状态
+    # task.add_command("ReqFunctionStatus", [])
 
     # 请求给我发放一些道具
-    # task.send_msg_and_receive("ReqGiveMeItems", [{"6201": 1000000}, helper.KEY, 10447])
-    # task.send_msg_and_receive("ReqGiveMeItems", [{"6201": 1}, helper.KEY, 10446])
-    # task.send_msg_and_receive("ReqGiveMeItems", [{"6201": 10000000, "14006": 1000}, helper.KEY, 10468])-
+    # 人物经验-1006  会员经验-1005  金币-1001  钻石-1002  荣耀战令-3488  神力-3432  灵力-3364
+    # 端午战令-3529 端午勋章经验-3538  大肉粽-3533  红豆粽-3534  蛋黄粽-3536   粽叶-3533  糯米-3534  红豆-3535  五花肉-3536  蛋黄-3537
+    # 夏日盛典勋章经验-3595 夏日盛典水枪道具: 3587 3588 3589 3590
+    # task.send_msg_and_receive("ReqGiveMeItems", [{"1006": 1000000000}, helper.KEY, 0])
+    # task.send_msg_and_receive("ReqGiveMeItems", [{"3587": 1000, "3588": 1000, "3589": 1000, "3590": 1000}, helper.KEY, 10027])
+    # 古代战舰图纸-3125  现代战舰图纸-3126  功勋值-3596
+    # task.send_msg_and_receive("ReqGiveMeItems", [{"3125": 10000, "3126": 10000, "3596": 1000000}, helper.KEY, 10027])
 
-    # 1. 获取战令信息
-    # task.add_command("ReqGetPlayerWarOrderInfo", [])
-
-    # 渔场玩法 ---------------------------------------------------------------------->
-    # 1. 摇钱树信息
-    # task.send_msg_and_receive("ReqPrizePoolInfo", [0])
-
-    # 2. 请求获取龙宫献礼信息
-    # task.add_command("ReqGetDragonBlessInfo", [])
-    # 请求抽取龙宫献礼奖励  times: 献礼次数
-    # task.add_command("ReqDrawDragonBlessReward", [1])
-    # 请求获取龙宫献礼赐福奖励
-    # task.add_command("ReqGetDragonBlessReward", [])
-
-    # 3. 请求获取弹药库信息
-    # task.add_command("ReqGetAmmunitionInfo", [""])
-    # 请求抽取弹药库奖励  type: 1：普通弹药库，2：豪华弹药库；  times: 次数
-    # task.add_command("ReqDrawAmmunitionReward", [1, 10])
-
-    # 4. 请求获取渔场玩法排行榜  type 排行榜类型 1=猎妖 2=炼金    resetType 重置类型 1=日榜 2=周榜
-    # task.add_command("ReqGetFisheryPlayRankInfo", [2, 1])
-
-    # 黄金海妖抽奖 ---------------------------------------------------------------------->
-    # 设置黄金海妖玩家赏金值
-    # task.add_command("ReqFruitConsole", ["SetGoldenFishLottery 550"])
-    # 请求获取黄金海妖抽奖信息
-    # task.add_command("ReqGetGoldenFishLotteryInfo", [])
-    # 请求抽奖黄金海妖
-    # task.add_command("ReqDrawGoldenFishLottery", [])
-
-    # 使用道具
-    # task.add_command("ReqUseItem", [14006, 1])
+    # 3621-怪兽结晶
+    # task.send_msg_and_receive("ReqGiveMeItems", [{"3621": 1300}, helper.KEY, 0])
+    # task.send_msg_and_receive("ReqGiveMeItems", [{"3634": 50, "3635": 500}, helper.KEY, 10080])
+    # task.send_msg_and_receive("ReqGiveMeItems", [{"3634": 1}, helper.KEY, 10079])
 
 
+
+    # task.send_msg_and_receive("ReqGiveMeItems", [{"1001": 10000000000, "1006": 100000000, "6001": 100000000, "6113": 100000000, "4001": 9999}, helper.KEY, 0])
+    # task.add_command("ReqOBUnlockCannonLv", [50000000])
+
+
+    # 太平洋 ================================================>
+    # 0. 请求节日活动信息 festivalType = 52
+    # task.add_command("ReqFestivalInfo", [52])
+
+    # 1. 太平洋抽奖(末日宝箱) activityId = 214
+    # 1.1. 请求太平洋抽奖信息  activityId
+    # task.add_command("ReqPacificLotteryInfo", [214])
+    # 1.2. 请求领取太平洋抽奖奖励  activityId  type-抽取宝箱类型  num-抽取次数
+    # task.add_command("ReqGainPacificLotteryReward", [214, 1, -1])
+
+    # 2. 太平怪物商人 activityId = 215
+    # 2.1. 请求获取怪物商人信息  activityId
+    # task.add_command("ReqGetMonsterMerchantInfo", [215])
+    # 2.2. 请求领取怪物商人通关奖励  activityId
+    # task.add_command("ReqGetMonsterMerchantReward", [215])
+
+    # 3. 机甲商城 activityId = 216  54  + 213
+    # task.add_command("ReqFestivalShopInfo", [213])
+    # task.add_command("ReqFestivalShopInfo", [216])
+
+    # 4. 限时礼包 activityId = 217  55
+    # task.add_command("ReqFestivalShopInfo", [217])
+
+
+
+    # task.buy_charge_gift(10389)
 
     task.start()
