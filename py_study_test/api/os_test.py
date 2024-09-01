@@ -115,3 +115,5 @@ def walk_demo():
     # 打印子目录和子文件
     for file in all_files:
         print(file)
+
+listdir_test()
