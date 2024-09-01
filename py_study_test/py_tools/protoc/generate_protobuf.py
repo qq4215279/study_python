@@ -179,6 +179,10 @@ def method_name(proto_file_path):
                     elif length >= 1:
                         filed.field_name = arr[0]
 
+                    # TODO 去除空格？ 有咩有更好的写法？
+                    # if field_notes.find("\n") != -1:
+                    #     field_notes = field_notes[0: len(field_notes) - 2]
+
                     filed.notes = field_notes
                     filed.field_order = field_order
 
