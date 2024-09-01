@@ -1,0 +1,28 @@
+{%- for lime in projectFile.lines %}
+{%- if lime.startswith("###") %}
+{%- set key = lime[3:] %}
+{%- set proto = projectFile.proto_dict[key] %}
+{%- if proto.type == 1 %}
+message {{proto.name}} {
+  {%- for field in proto.fields %}
+  {{field.notes}}
+  {%- if field.field_rule != '' %}
+  {{field.field_rule}} {{field.field_type}} {{field.field_name}} = {{field.field_order}};
+  {%- else %}
+  {{field.field_type}} {{field.field_name}} = {{field.field_order}};
+  {%- endif %}
+  {%- endfor %}
+}
+{%- else %}
+enum {proto.name} {
+  {%- for field in proto.fields %}
+  {{field.notes}}
+  {{field.field_name}} = {{field.field_order}};
+  {%- endfor %}
+}
+{%- endif %}
+{%- else -%}
+{{lime}}
+{%- endif %}
+{%- else %}
+{%- endfor %}
