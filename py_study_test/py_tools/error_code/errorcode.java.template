@@ -1,0 +1,277 @@
+/*
+ * Copyright 2013-2023, 上海成蹊信息科技有限公司.
+ * All Right Reserved.
+ */
+
+package com.cxx.hf.exception;
+
+import org.dom4j.Document;
+import org.dom4j.DocumentHelper;
+import org.dom4j.Element;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.io.XMLWriter;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
+
+/**
+ * @ClassName ErrorCode
+ * @Description 错误码
+ * @author cxx-cz
+ * @Date 2017年8月31日 下午8:18:47
+ * @version 1.0.0
+ */
+public class ErrorCode {
+    /** 中文简体 propName */
+    private static final String ZH_CN_PROP_NAME = "errorTips_zh_CN.properties";
+    /** 英文 propName */
+    private static final String EN_PROP_NAME = "errorTips_en_US.properties";
+    /** 中文繁体 propName */
+    private static final String ZH_TW_PROP_NAME = "errorTips_zh_TW.properties";
+
+    public static Set<Integer> NEED_ALERT = new HashSet<>();
+
+    /**
+     * @ClassName Comment
+     * @Description 注释
+     * @author cxx-cz
+     * @Date 2017年8月31日 下午8:19:03
+     * @version 1.0.0
+     */
+    @Target(ElementType.FIELD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface Comment {
+        /** 中文简体 */
+        String cnText() default "";
+        /** 英文 */
+        String enText() default "";
+        /** 中文繁体 */
+        String twText() default "";
+    }
+
+    // ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓通用错误码↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+
+{%- for key, value in common_key_errorcode_list.items() %}
+    @Comment(cnText = "{{value.cnText}}", enText = "{{value.enText}}", twText = "{{value.twText}}")
+    public static final int {{key}}
+{%- endfor %}
+
+    // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+
+
+    // ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓下面的CODE客户端写死的 不要随便改数字↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+
+{%- for key, value in client_key_errorcode_list.items() %}
+    @Comment(cnText = "{{value.cnText}}", enText = "{{value.enText}}", twText = "{{value.twText}}")
+    public static final int {{key}}
+{%- endfor %}
+
+
+    // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+
+{%- for key, value in other_key_errorcode_list.items() %}
+    @Comment(cnText = "{{value.cnText}}", enText = "{{value.enText}}", twText = "{{value.twText}}")
+    public static final int {{key}}
+{%- endfor %}
+
+    static {
+        // 把需要预警的错误码加到SET里
+        {%- for value in need_alert_list %}
+        NEED_ALERT.add({{value}});
+        {%- endfor %}
+
+    }
+
+    public static void main(String[] args) throws Exception {
+        /*
+        * 调用脚本进行翻译
+        * 使用步骤:
+        * 1. 配置python3.8环境(安装包：\\10.198.141.130\sgp_dev\服务器用常用软件\\python-3.8.5.exe)。Python版本不低于3.0.
+        * 2. 安装指定库:
+        *      2.1  jinja2 库: pip install jinja2
+        *      2.2  requests 库: pip install requests
+        * 3. 修改 errorTips 生成目录: 进入 generate_error_code.py, 修改 ERROR_TIPS_DIR 变量路径
+        */
+        String command = "python " + System.getProperty("user.dir") + "/../3rd-party/py_tools/error_code/generate_error_code.py";
+        asynExecCommand(command);
+
+        // checkValueFields();
+        // generateProperties(ZH_CN_PROP_NAME);
+        // generateProperties(EN_PROP_NAME);
+        // generateProperties(ZH_TW_PROP_NAME);
+    }
+
+    /**
+     * 异步执行命令
+     * @param command 命令
+     * @return int 执行返回状态码
+     * @date 2023/12/23 16:46
+     */
+    private static void asynExecCommand(String command) {
+        new Thread(() -> {
+            try {
+                // 执行命令
+                Process process = Runtime.getRuntime().exec(command);
+                // 获取命令执行的输出
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), "gbk"));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+
+    }
+
+    /**
+     * 校验错误码
+     * @return void
+     * @date 2024/1/4 19:15
+     */
+    private static void checkValueFields() throws IllegalAccessException {
+        Set<Integer> codes = new HashSet<>();
+        Field[] fields = ErrorCode.class.getDeclaredFields(); // 获取所有的属性
+        for (Field field : fields) {
+            Annotation[] annotations = field.getDeclaredAnnotations(); // 获取该属性上的所有注解
+            for (Annotation annotation : annotations) {
+                if (annotation instanceof Comment) { // 判断该注解是否为 Comment 类型
+                    Comment comment = (Comment)annotation;
+                    int value = Integer.parseInt(field.get(null).toString());
+                    if (codes.contains(value)) {
+                        System.err.println("ID重复:" + comment.cnText() + "  " + value);
+                    }
+                    codes.add(value);
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static void generateXml() throws IOException, IllegalArgumentException, IllegalAccessException {
+        OutputFormat format = OutputFormat.createPrettyPrint();
+        String packagePath = ErrorCode.class.getPackage().getName().replace(".", "/");
+        File file = new File("src/main/java/" + packagePath + "/errorcode.xml");
+        if (file.exists()) {
+            file.delete();
+        }
+        boolean newFile = file.createNewFile();
+        if (!newFile) {
+            throw new RuntimeException("文件创建失败");
+        }
+
+        XMLWriter writer = new XMLWriter(new FileOutputStream(file), format);
+        Document doc = DocumentHelper.createDocument();
+        doc.setXMLEncoding("utf-8");
+        Element root = doc.addElement("root");
+        Set<Integer> codes = new HashSet<>();
+        for (Field e : ErrorCode.class.getDeclaredFields()) {
+            String text;
+            Comment c = e.getAnnotation(Comment.class);
+            if (c != null) {
+                byte[] b1 = c.cnText().getBytes(StandardCharsets.UTF_8);
+                text = new String(b1, StandardCharsets.UTF_8);
+                int code = e.getInt(null);
+                if (codes.add(code)) {
+                    root.addElement("entry").addAttribute("id", String.valueOf(code)).addAttribute("text", "")
+                        .addAttribute("comment", text + " ");
+                }
+            } else {
+                System.err.println("no annotation:" + e.getName());
+            }
+        }
+        writer.write(doc);
+        writer.close();
+        System.out.println(file.getAbsolutePath() + " has generated successfully!");
+    }
+
+    /**
+     * 生成配置
+     * @param propName properties文件名称
+     * @return void
+     * @date 2024/1/4 19:14
+     */
+    private static void generateProperties(String propName) throws IOException {
+        Properties prop = new Properties();
+        File file = new File("../hf-servercore/src/main/resources/" + propName);
+        if (file.exists()) {
+            file.delete();
+        }
+        boolean newFile = file.createNewFile();
+        if (!newFile) {
+            throw new RuntimeException("文件创建失败");
+        }
+
+        Properties newProp = new Properties();
+        try (FileOutputStream oFile = new FileOutputStream(file, true)) {
+            Set<Integer> oldCodes = new TreeSet<>();
+            for (String string : prop.stringPropertyNames()) {
+                if (!string.contains(".")) {
+                    oldCodes.add(Integer.valueOf(string));
+                }
+            }
+            Set<Integer> newCodes = new TreeSet<>();
+            for (Field e : ErrorCode.class.getDeclaredFields()) {
+                String text;
+                Comment c = e.getAnnotation(Comment.class);
+                if (c != null) {
+                    text = getText(propName, c);
+                    int code = e.getInt(null);
+                    if (!oldCodes.contains(code)) {
+                        if (!newCodes.contains(code)) {
+                            if (newCodes.add(code)) {
+                                newProp.setProperty(String.valueOf(code), text);
+                                System.out.println("export ErrorCode: " + code + "--> message:" + text);
+                            }
+                        } else {
+                            System.err.println("Duplicate code with new ErrorCodes:" + e.getName());
+                        }
+                    }
+                }
+            }
+            if (!newProp.isEmpty()) {
+                newProp.store(oFile, "--------------------Coder " + System.getProperty("user.name")
+                    + " Add new Properties--------------------");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 获取错误码内容
+     * @param propName properties文件名称
+     * @param c Comment注解
+     * @return java.lang.String
+     * @date 2024/1/4 19:11
+     */
+    private static String getText(String propName, Comment c) {
+        if (propName.equals(ZH_CN_PROP_NAME)) {
+            byte[] b1 = c.cnText().getBytes(StandardCharsets.UTF_8);
+            return new String(b1, StandardCharsets.UTF_8);
+        } else if (propName.equals(EN_PROP_NAME)) {
+            byte[] b1 = c.enText().getBytes(StandardCharsets.UTF_8);
+            return new String(b1, StandardCharsets.UTF_8);
+        } else {
+            byte[] b1 = c.twText().getBytes(StandardCharsets.UTF_8);
+            return new String(b1, StandardCharsets.UTF_8);
+        }
+    }
+
+}
