@@ -14,7 +14,7 @@ message {{proto.name}} {
   {%- endfor %}
 }
 {% else -%}
-enum {proto.name} {
+enum {{proto.name}} {
   {%- for field in proto.fields %}
 {{field.notes}}
   {{field.field_name}} = {{field.field_order}};
