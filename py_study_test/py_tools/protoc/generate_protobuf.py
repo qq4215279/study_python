@@ -10,6 +10,26 @@ from jinja2 import Environment, FileSystemLoader
 # 项目根路径
 PROJECT_ABPATH = f"{os.path.dirname(__file__)}/../../../"
 
+FieldType_DICT = {
+    "double": "Double",
+    "float": "Float",
+    "int64": "Long",
+    "uint64": "Long",
+    "int32": "Integer",
+    "fixed64": "Long",
+    "fixed32": "Integer",
+    "bool": "Boolean",
+    "string": "String",
+    "bytes": "bytes",
+    "uint32": "Integer",
+    "sfixed32": "Integer",
+    "sfixed64": "Long",
+    "sint32": "Integer",
+    "sint64": "Long",
+    "object": "Object",
+    "enum": "Enum",
+    "map": "Map",
+}
 
 # 协议路径 与 ProtoFile对象映射
 PROTO_FILE_DICT = dict()
