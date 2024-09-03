@@ -179,11 +179,7 @@ def method_name(proto_file_path):
                     elif length >= 1:
                         filed.field_name = arr[0]
 
-                    # TODO 去除空格？ 有咩有更好的写法？
-                    # if field_notes.find("\n") != -1:
-                    #     field_notes = field_notes[0: len(field_notes) - 2]
-
-                    filed.notes = field_notes
+                    filed.notes = field_notes.replace("\n", "")
                     filed.field_order = field_order
 
                     # reset
@@ -208,7 +204,7 @@ def method_name(proto_file_path):
                 new_proto = Proto()
                 new_proto.name = proto_name
                 new_proto.type = proto_type
-                new_proto.notes = proto_notes
+                new_proto.notes = proto_notes.replace("\n", "")
                 proto_notes = ""
 
                 protoFile.proto_dict[proto_name] = new_proto
@@ -224,7 +220,7 @@ def method_name(proto_file_path):
                 new_proto = Proto()
                 new_proto.name = proto_name
                 new_proto.type = proto_type
-                new_proto.notes = proto_notes
+                new_proto.notes = proto_notes.replace("\n", "")
                 proto_notes = ""
 
                 protoFile.proto_dict[proto_name] = new_proto
