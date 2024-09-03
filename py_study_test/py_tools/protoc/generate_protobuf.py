@@ -162,6 +162,21 @@ def method_name(proto_file_path):
             if startProto:
                 # 结束协议
                 if readline.find("}") != -1:
+                    # 还有注释
+                    if field_notes != "":
+                        # TODO
+                        # Message
+                        if proto_type == 1:
+                            filed = MField()
+                            filed.notes = field_notes.replace("\n", "")
+                            proto.fields.append(filed)
+                        # Enum
+                        elif proto_type == 2:
+                            filed = EField()
+                            filed.notes = field_notes.replace("\n", "")
+                            proto.fields.append(filed)
+                        field_notes = ""
+
                     startProto = False
                     proto_notes = ""
                     field_order = 1
@@ -174,12 +189,12 @@ def method_name(proto_file_path):
                         # Message
                         if proto_type == 1:
                             filed = MField()
-                            filed.field_type = proto_type
+                            filed.notes = field_notes.replace("\n", "")
                             proto.fields.append(filed)
                         # Enum
                         elif proto_type == 2:
                             filed = EField()
-                            filed.field_type = proto_type
+                            filed.notes = field_notes.replace("\n", "")
                             proto.fields.append(filed)
 
 

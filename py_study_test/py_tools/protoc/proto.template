@@ -6,7 +6,9 @@ message {{proto.name}} {
   {%- for field in proto.fields -%}
     {%- if field.field_rule == '' %}
 {{field.notes}}
+        {%- if field.field_type != '' %}
   {{field.field_type}} {{field.field_name}} = {{field.field_order}};
+        {%- endif -%}
     {%- else %}
 {{field.notes}}
   {{field.field_rule}} {{field.field_type}} {{field.field_name}} = {{field.field_order}};
@@ -17,7 +19,9 @@ message {{proto.name}} {
 enum {{proto.name}} {
   {%- for field in proto.fields %}
 {{field.notes}}
+    {%- if field.field_type != '' %}
   {{field.field_name}} = {{field.field_order}};
+    {%- endif -%}
   {%- endfor %}
 }
 {% endif %}
