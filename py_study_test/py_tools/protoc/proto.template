@@ -20,7 +20,7 @@ enum {{proto.name}} {
   {%- for field in proto.fields %}
 {{field.notes}}
     {%- if field.field_type != '' %}
-  {{field.field_name}} = {{field.field_order}};
+  {{field.field_name}} = {{field.field_order - 1}};
     {%- endif -%}
   {%- endfor %}
 }
