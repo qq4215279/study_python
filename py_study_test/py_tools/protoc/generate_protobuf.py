@@ -6,10 +6,26 @@ import time
 
 from jinja2 import Environment, FileSystemLoader
 
+# 项目根路径
+# PROJECT_ABPATH = f"{os.path.dirname(__file__)}/../../../"
+# 协议所在路径
+# PROTO_PATH = f"{PROJECT_ABPATH}/AutoGen/src/main/resources/proto"
+# 生成实体类所在目录
+# POJO_PATH = f"{PROJECT_ABPATH}/AutoGen/src/main/java"
 
 # 项目根路径
-PROJECT_ABPATH = f"{os.path.dirname(__file__)}/../../../"
+PROJECT_ABPATH = f"D:\\Code\\IdeaWorkSpace\\coding_plan\\tech_enhance"
+# 协议所在路径
+PROTO_PATH = f"{PROJECT_ABPATH}/src/main/resources/proto"
+# 生成实体类所在目录
+POJO_PATH = f"{PROJECT_ABPATH}/src/main/java"
 
+# proto协议文件路径 与 ProtoFile对象映射
+PROTO_FILE_DICT = dict()
+# 协议名 与 对应包路径
+MESSAGE_NAME_PACKAGE_PATH_DICT = dict()
+
+# 协议映射
 FieldType_DICT = {
     "double": "Double",
     "float": "Float",
@@ -31,14 +47,11 @@ FieldType_DICT = {
     "map": "Map",
 }
 
-# 协议路径 与 ProtoFile对象映射
-PROTO_FILE_DICT = dict()
-# 协议名 与 对应包路径
-PROTO_NAME_PACKGE_PATH_DICT = dict()
-
 """
 协议文件
 """
+
+
 class ProtoFile:
     def __init__(self):
         # 协议绝对路径
@@ -48,14 +61,13 @@ class ProtoFile:
         # 导入的protoc文件
         self.imports = list()
         # Message 列表
-        self.proto_dict = dict()
+        self.message_dict = dict()
         # 文件所有行信息
         self.lines = list()
-        # 协议(Message & Enum)注释: 协议名 : 注释
-        self.proto_notes = dict()
+
 
 # 协议
-class Proto:
+class Message:
     # 协议名
     name: str
     # 协议类型: 1: Message; 2: Enum
@@ -86,66 +98,81 @@ class EField:
         self.field_name = ""
         self.field_order = 1
 
+
 # Message消息协议字段
 class MField(EField):
     # 字段规则: repeated TODO 当前仅支持 repeated
     field_rule: str
     # 字段类型
     field_type: str
+    java_field_type: str
 
     def __init__(self):
         self.field_rule = ""
         self.field_type = ""
+        self.java_field_type = ""
 
 
 """
 
 
 """
-def general_protobuff():
-    #
-    # 协议所在路径
-    proto_path = f"{PROJECT_ABPATH}/AutoGen/src/main/resources/proto"
 
+
+def general_proto_buff():
     # 1. 获取所有proto协议文件
-    proto_file_paths = __get_all_proto_file_paths(proto_path)
+    proto_file_paths = __get_all_proto_file_paths(PROTO_PATH)
+
+    proto_file_paths = list()
+    path = "D:\\Code\\IdeaWorkSpace\\coding_plan\\tech_enhance\\src\\main\\resources\\proto\\baloot\\baloot.proto"
+    proto_file_paths.append(path)
 
     # 2. 生成客户端proto文件
-    __do_general_client_proto(proto_file_paths)
+    __parse_client_protos(proto_file_paths)
+
+    # 3. 生成Java实体
+    __render_protos_template()
+
+    # 4. 生成Java实体
+    __render_java_template()
 
 
 """
 获取所有proto协议文件
 """
-def __get_all_proto_file_paths(dirPath: str) -> list:
-  files = []
 
-  for fileName in os.listdir(dirPath):
-    ab_path = f"{dirPath}/{fileName}"
-    if os.path.isdir(ab_path):
-      files.extend(__get_all_proto_file_paths(f"{dirPath}/{fileName}"))
-    else:
-      files.append(ab_path)
 
-  return files
+def __get_all_proto_file_paths(path: str) -> list:
+    files = list()
+
+    for fileName in os.listdir(path):
+        ab_path = f"{path}/{fileName}"
+        if os.path.isdir(ab_path):
+            files.append(__get_all_proto_file_paths(f"{path}/{fileName}"))
+        else:
+            files.append(ab_path)
+
+    return files
 
 
 """
 do 生成客户端proto文件
 """
-def __do_general_client_proto(proto_file_paths):
+
+
+def __parse_client_protos(proto_file_paths):
     for proto_file_path in proto_file_paths:
-        method_name(proto_file_path)
+        __parse_client_proto(proto_file_path)
 
 
-def method_name(proto_file_path):
+def __parse_client_proto(proto_file_path):
     protoFile = ProtoFile()
     with open(f"{proto_file_path}", 'r', encoding="utf-8") as source_file:
         PROTO_FILE_DICT[proto_file_path] = protoFile
         protoFile.abPath = proto_file_path
 
         # 协议名
-        proto_name = ""
+        message_name = ""
         startProto = False
         # 协议类型: 1: Message; 2: Enum
         proto_type: int
@@ -183,7 +210,7 @@ def method_name(proto_file_path):
 
                     # TODO 目前定义协议，需要需要加等号=
                 elif readline.find("=") != -1:
-                    proto = protoFile.proto_dict[proto_name]
+                    proto = protoFile.message_dict[message_name]
                     # 初始化
                     if len(proto.fields) <= field_order - 1:
                         # Message
@@ -197,7 +224,6 @@ def method_name(proto_file_path):
                             filed.notes = field_notes.replace("\n", "")
                             proto.fields.append(filed)
 
-
                     filed = proto.fields[field_order - 1]
                     arr = readline.split("=")[0].strip().split(" ")
                     length = len(arr)
@@ -205,6 +231,7 @@ def method_name(proto_file_path):
                     if length >= 3:
                         filed.field_rule = arr[0]
                         filed.field_type = arr[1]
+                        filed.java_field_type = __convert_2_java_fields(filed.field_type)
                         filed.field_name = arr[2]
                     elif length >= 2:
                         filed.field_type = arr[0]
@@ -229,37 +256,37 @@ def method_name(proto_file_path):
 
             # Message 协议
             elif readline.find("message ") != -1 and readline.find("{") != -1:
-                proto_name = readline.split("message")[1].split("{")[0].strip()
+                message_name = readline.split("message")[1].split("{")[0].strip()
 
-                protoFile.lines.append(f"###{proto_name}")
+                protoFile.lines.append(f"###{message_name}")
 
                 startProto = True
                 proto_type = 1
 
-                new_proto = Proto()
-                new_proto.name = proto_name
-                new_proto.type = proto_type
-                new_proto.notes = proto_notes.replace("\n", "")
+                new_enum = Message()
+                new_enum.name = message_name
+                new_enum.type = proto_type
+                new_enum.notes = proto_notes.replace("\n", "")
                 proto_notes = ""
 
-                protoFile.proto_dict[proto_name] = new_proto
-                PROTO_NAME_PACKGE_PATH_DICT[proto_file_path] = protoFile.java_package
+                protoFile.message_dict[message_name] = new_enum
+                MESSAGE_NAME_PACKAGE_PATH_DICT[message_name] = protoFile.java_package
 
             elif readline.find("enum ") != -1 and readline.find("{") != -1:
-                proto_name = readline.split("enum")[1].split("{")[0].strip()
-                protoFile.lines.append(f"###{proto_name}")
+                message_name = readline.split("enum")[1].split("{")[0].strip()
+                protoFile.lines.append(f"###{message_name}")
 
                 startProto = True
                 proto_type = 2
 
-                new_proto = Proto()
-                new_proto.name = proto_name
-                new_proto.type = proto_type
-                new_proto.notes = proto_notes.replace("\n", "")
+                new_enum = Message()
+                new_enum.name = message_name
+                new_enum.type = proto_type
+                new_enum.notes = proto_notes.replace("\n", "")
                 proto_notes = ""
 
-                protoFile.proto_dict[proto_name] = new_proto
-                PROTO_NAME_PACKGE_PATH_DICT[proto_file_path] = protoFile.java_package
+                protoFile.message_dict[message_name] = new_enum
+                MESSAGE_NAME_PACKAGE_PATH_DICT[message_name] = protoFile.java_package
 
                 # option java_package = "com.game.proto.basegame";
                 # TODO java_package 定义必须在协议最前面！
@@ -284,29 +311,81 @@ def method_name(proto_file_path):
                 protoFile.lines.append(readline)
                 proto_notes += readline
 
+    # TODO
     print("end....")
-    return protoFile
 
+
+def __convert_2_java_fields(field_type: str):
+    if field_type in FieldType_DICT:
+        return FieldType_DICT[field_type]
+    else:
+        return field_type
 
 """
-
+渲染所有proto模板
 """
-def render_proto_template(projectFile: ProtoFile):
-    print("3. 开始生成错误码文件...")
+def __render_protos_template():
+    for proto_file, projectFile in PROTO_FILE_DICT.items():
+        __render_proto_template(projectFile)
+
+# 渲染proto模板
+def __render_proto_template(projectFile: ProtoFile):
+    print(". 开始渲染proto模板...")
     loader = FileSystemLoader(os.path.dirname(__file__), encoding='utf-8')
     env = Environment(loader=loader)
     template = env.get_template('proto.template')
     result = template.render(projectFile=projectFile)
 
     # 写入文件中
-    with open(f"D:\\Code\\PythonWorkSpace\\study_python\\py_study_test\\py_tools\\protoc\\game.proto", 'wb') as file:
+    with open(f"{projectFile.abPath}", 'wb') as file:
         file.write(result.encode('utf8'))
 
+def __render_java_template():
+    for proto_file, project_file in PROTO_FILE_DICT.items():
+        for message_name, message in project_file.message_dict.items():
+            __do_render_java_template(project_file.java_package, message)
 
-def render_java_template():
-    pass
+
+def __do_render_java_template(java_package: str, message: Message):
+    imports = __find_all_import_packages(java_package, message)
+
+    clazz_type_name = __getClazz_type_name(message.type)
+
+    print(". 开始渲染Java模板...")
+    loader = FileSystemLoader(os.path.dirname(__file__), encoding='utf-8')
+    env = Environment(loader=loader)
+    template = env.get_template('proto.to.java.template')
+    # TODO
+    result = template.render(package=java_package, imports=imports, clazz_type_name=clazz_type_name, message=message)
+
+    dest_java_path = f"{POJO_PATH}/{java_package.replace('.', '/')}/{message.name}.java"
+    print("dest_java_path: ", dest_java_path)
+
+    # 写入文件中
+    with open(dest_java_path, 'wb') as file:
+        file.write(result.encode('utf8'))
+
+def __find_all_import_packages(java_package: str, message: Message) -> list:
+    packages = list()
+    # 枚举
+    if message.type == 2:
+        return packages
+
+    # class
+    for field in message.fields:
+        if field.field_type not in FieldType_DICT and java_package != MESSAGE_NAME_PACKAGE_PATH_DICT[field.field_type]:
+            packages.append(MESSAGE_NAME_PACKAGE_PATH_DICT[field.field_type] + "." + field.field_type)
+
+    return packages
+
+
+def __getClazz_type_name(type) -> str:
+    if type == 1:
+        return "class"
+    else:
+        return "enum"
+
 
 if __name__ == '__main__':
-    path = "D:\\Code\\IdeaWorkSpace\\coding_plan\\tech_enhance\\src\main\\resources\\proto\\basegame\\game.proto"
-    projectFile = method_name(path)
-    render_proto_template(projectFile)
+    path = "D:\\Code\\IdeaWorkSpace\\coding_plan\\tech_enhance\\src\\main\\resources\\proto\\baloot\\baloot.proto"
+    general_proto_buff()

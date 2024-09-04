@@ -2,19 +2,34 @@ package {{package}};
 
 import com.baidu.bjf.remoting.protobuf.annotation.ProtobufClass;
 import lombok.Data;
-// TODO
-import {{}}
+{% for im in imports -%}
+import {{im}};
+{% endfor %}
 
 /**
- * CmdBean 命令
+ * {{message.name}}
+ * {{message.notes}}
  * @author Auto-generated
  * @version 1.0.0 2024/9/01 17:00
  */
 @ProtobufClass
 @Data
-public class CmdBean {
-  /** 命令 */
-  private CommandEnum command;
-  /** 命令参数列表 */
-  private java.util.List<String> args = new java.util.ArrayList<>();
+public {{clazz_type_name}} {{message.name}} {
+{%- if message.type == 1 %}
+
+{%- for field in message.fields -%}
+  {{field.notes}}
+{%- if field.field_rule.find('repeated') != -1 %}
+  private java.util.List<{{field.java_field_type}}> {{field.field_name}} = new java.util.ArrayList<>();
+{%- else -%}
+  private {{field.java_field_type}} {{field.field_name}};
+{%- endif -%}
+{%- endfor -%}
+{%- for field in message.fields -%}
+  {{field.notes}}
+  {{field.field_name}},
+{%- endfor -%}
+  ;
+{%- endif -%}
+
 }
