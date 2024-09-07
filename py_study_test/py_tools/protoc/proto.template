@@ -1,7 +1,7 @@
-{%- for lime in projectFile.lines -%}
+{%- for lime in proto.lines -%}
 {%- if lime.startswith("###") -%}
-{%- set proto = projectFile.message_dict[lime[3:]] -%}
-{%- if proto.type == 1 -%}
+{%- set proto = proto.message_dict[lime[3:]] -%}
+{%- if proto.type.find("message") != -1 -%}
 message {{proto.name}} {
   {%- for field in proto.fields -%}
     {%- if field.field_rule == '' %}
