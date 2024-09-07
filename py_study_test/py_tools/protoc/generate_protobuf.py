@@ -127,10 +127,10 @@ def general_proto_buff():
     path = "D:\\Code\\IdeaWorkSpace\\coding_plan\\tech_enhance\\src\\main\\resources\\proto\\baloot\\baloot.proto"
     proto_file_paths.append(path)
 
-    # 2. 生成客户端proto文件
+    # 2. 解析proto文件
     __parse_client_protos(proto_file_paths)
 
-    # 3. 生成Java实体
+    # 3. 生成客户端proto文件
     __render_protos_template()
 
     # 4. 生成Java实体
@@ -196,12 +196,12 @@ def __parse_client_proto(proto_file_path):
                         if proto_type == 1:
                             filed = MField()
                             filed.notes = field_notes.replace("\n", "")
-                            proto.fields.append(filed)
+                            message.fields.append(filed)
                         # Enum
                         elif proto_type == 2:
                             filed = EField()
                             filed.notes = field_notes.replace("\n", "")
-                            proto.fields.append(filed)
+                            message.fields.append(filed)
                         field_notes = ""
 
                     startProto = False
@@ -210,21 +210,21 @@ def __parse_client_proto(proto_file_path):
 
                     # TODO 目前定义协议，需要需要加等号=
                 elif readline.find("=") != -1:
-                    proto = protoFile.message_dict[message_name]
+                    message = protoFile.message_dict[message_name]
                     # 初始化
-                    if len(proto.fields) <= field_order - 1:
+                    if len(message.fields) <= field_order - 1:
                         # Message
                         if proto_type == 1:
                             filed = MField()
                             filed.notes = field_notes.replace("\n", "")
-                            proto.fields.append(filed)
+                            message.fields.append(filed)
                         # Enum
                         elif proto_type == 2:
                             filed = EField()
                             filed.notes = field_notes.replace("\n", "")
-                            proto.fields.append(filed)
+                            message.fields.append(filed)
 
-                    filed = proto.fields[field_order - 1]
+                    filed = message.fields[field_order - 1]
                     arr = readline.split("=")[0].strip().split(" ")
                     length = len(arr)
                     # repeated int64 playerIds
@@ -233,9 +233,13 @@ def __parse_client_proto(proto_file_path):
                         filed.field_type = arr[1]
                         filed.java_field_type = __convert_2_java_fields(filed.field_type)
                         filed.field_name = arr[2]
+
+                        # int64 playerIds
+
                     elif length >= 2:
                         filed.field_type = arr[0]
                         filed.field_name = arr[1]
+                        filed.java_field_type = __convert_2_java_fields(filed.field_type)
 
                         # 枚举协议 eg: READY = 0;
                     elif length >= 1:
@@ -263,15 +267,16 @@ def __parse_client_proto(proto_file_path):
                 startProto = True
                 proto_type = 1
 
-                new_enum = Message()
-                new_enum.name = message_name
-                new_enum.type = proto_type
-                new_enum.notes = proto_notes.replace("\n", "")
+                new_message = Message()
+                new_message.name = message_name
+                new_message.type = proto_type
+                new_message.notes = proto_notes.replace("\n", "").replace("//", "").replace("/*", "").replace("/**", "").replace("*/", "")
                 proto_notes = ""
 
-                protoFile.message_dict[message_name] = new_enum
+                protoFile.message_dict[message_name] = new_message
                 MESSAGE_NAME_PACKAGE_PATH_DICT[message_name] = protoFile.java_package
 
+            # enum 协议
             elif readline.find("enum ") != -1 and readline.find("{") != -1:
                 message_name = readline.split("enum")[1].split("{")[0].strip()
                 protoFile.lines.append(f"###{message_name}")
@@ -279,13 +284,13 @@ def __parse_client_proto(proto_file_path):
                 startProto = True
                 proto_type = 2
 
-                new_enum = Message()
-                new_enum.name = message_name
-                new_enum.type = proto_type
-                new_enum.notes = proto_notes.replace("\n", "")
+                new_message = Message()
+                new_message.name = message_name
+                new_message.type = proto_type
+                new_message.notes = proto_notes.replace("\n", "").replace("//", "").replace("/*", "").replace("/**", "").replace("*/", "")
                 proto_notes = ""
 
-                protoFile.message_dict[message_name] = new_enum
+                protoFile.message_dict[message_name] = new_message
                 MESSAGE_NAME_PACKAGE_PATH_DICT[message_name] = protoFile.java_package
 
                 # option java_package = "com.game.proto.basegame";
