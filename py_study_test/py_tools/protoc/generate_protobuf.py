@@ -38,7 +38,7 @@ FieldType_DICT = {
     "fixed32": "Integer",
     "bool": "Boolean",
     "string": "String",
-    "bytes": "bytes",
+    "bytes": "byte[]",
     "uint32": "Integer",
     "sfixed32": "Integer",
     "sfixed64": "Long",
