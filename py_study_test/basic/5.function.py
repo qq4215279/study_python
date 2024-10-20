@@ -25,6 +25,7 @@ def findMax(a, b):
 
 
 max = findMax(10, 77)
+print("many return test: ")
 print(max)
 print(max[1])
 
