@@ -137,3 +137,71 @@ Python 对象中包含了很多双下划线开始和结束的属性，这些是�
 | *,/,%,// | __mul__, __truediv__, __mod__, __floordiv__       | 乘、浮点除、模运算（取余）、整数除  |
 | **       | __pow__                                           | 指数运算                           |
 '''
+
+
+"""
+动态创建对象
+如果你想要在运行时通过字符串类名动态创建对象，可以使用 globals() 或 locals() 函数来获取类对象。
+"""
+# 定义一个简单的类
+class Person:
+    def __init__(self, name=None, age=None, gender=None):
+        self.name = name  # 实例属性 name
+        self.age = age    # 实例属性 age
+        self.gender = gender    # 实例属性 age
+
+    def greet(self):
+        return f"你好，我是 {self.name}，我 {self.age} 岁。"
+
+    def update_age(self, new_age):
+        self.age = new_age
+
+    def __str__(self):
+        return f"Person(name={self.name}, age={self.age}, gender={self.gender})"
+
+def createOBAndSetValue():
+    class_name = "Person"
+    person_dict = {"name": "lihua", "sex": "男", "age": 100}
+
+    # 从全局命名空间中获取类
+    person = globals()[class_name]
+    person = person()
+
+    # 使用外部函数更新对象的属性
+    update_attributes(person, person_dict)
+
+    # 输出更新后的属性
+    print(person)  # 输出: Person(name=小红, age=30, gender=男)
+
+    # 调用方法的字符串名称
+    method_name = "greet"
+
+    # 使用 getattr() 调用指定名称的方法
+    greeting_method = getattr(person, method_name)
+    print(greeting_method())
+
+    # 更新年龄的方法
+    update_method_name = "update_age"
+    new_age = 30
+
+    # 使用 getattr() 调用指定名称的方法并传参
+    update_method = getattr(person, update_method_name)
+    update_method(new_age)  # 正确调用更新年龄的方法
+    print(person)
+
+def update_attributes(instance, attributes):
+    """
+    更新对象的属性。
+    :param instance: 要更新的对象实例
+    :param attributes: 包含属性名称及其新值的字典
+    """
+    for key, value in attributes.items():
+        setattr(instance, key, value)
+        # if hasattr(instance, key):
+        #     setattr(instance, key, value)
+        #     print(f"更新属性: {key} = {value}")
+        # else:
+        #     print(f"属性 {key} 不存在")
+
+
+createOBAndSetValue()
