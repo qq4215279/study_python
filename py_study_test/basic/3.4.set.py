@@ -11,7 +11,7 @@
     1. 可以使用花括号 {}  eg: set = {3, 5, 7, 20, 100}
     2. set() 函数来创建一个集合。eg: empty_set = set()
 
-添加和移除元素：
+添加和移除元素：while
     set.add(element)：向集合中添加元素。
     set.remove(element)：从集合中移除指定元素，如果元素不存在会引发 KeyError。
     set.discard(element)：从集合中移除指定元素，如果元素不存在不会引发异常。

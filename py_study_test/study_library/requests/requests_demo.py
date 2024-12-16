@@ -22,11 +22,15 @@ params = {'param1': 'value1', 'param2': 'value2'}
 
 # 2. POST请求
 # 2.1. 使用 data 参数发送表单数据：
-data = {'key1': 'value1', 'key2': 'value2'}
+data = {'inAppPurchaseData': '{"autoRenewing":false,"orderId":"20241127172121760e5dbb9075.112249195","packageName":"com.cxx.baloot","applicationId":112249195,"applicationIdString":"112249195","kind":0,"productId":"gold_100000","productName":"金币100000","purchaseTime":1732699285000,"purchaseTimeMillis":1732699285000,"purchaseState":0,"developerPayload":"1861701938894094336","purchaseToken":"000001936cece6d6f8139b142b491c2ba525e5fe8a79a4d6f3d4177798d94e64ec55cb9e56148cb3x5341.5.112249195","consumptionState":0,"confirmed":0,"purchaseType":0,"currency":"SAR","price":299,"country":"SA","payOrderId":"sandboxAd6999d170b1ad00b52126c2bf14bb95","payType":"34","sdkChannel":"1"}', 'inAppSignature':'iSpNvHAmQpoMJ9l638qSqx1btTI5/MQCUamH1gYl24UXsikq/zNLRN9S/exoqbqUUXd25OAYwAl2cvT4ubI8J+D5XPvdvW/Emg+4Lr5fe+E3jqEl1gk5OwQcDxt1w5WS0pHsYcdHlJ+ot11d59ApxoQTX9ZmXj5M8Af2cGtFMN0Uvu5FG6UJYjCvv7Ai+bN1X9RGjWA0qILtqXY/pUmOf1bqsBVDr80yLZcCTin592oHEGHIOYemjTXRSJ152vPQtg+7fGkLoGZHsuQE+bWsCWpDbOBjFFcXsSuMOLiPQqVBQb6p6hiZrHQMeDq9Xcm9rS1ma4gSe4HI36rs0h/NoX+C1R8RT5nu4C7jLgB1ie0yl5uCYMUF+teaMA4ogFx1zKrZiXkXTUPrjeMW8Ir2Mh7IYqBdxJCZBhLLwqTdwgjTJubqFAlVzseT6ieQmnwx8mafcRYY3FiAbwhEJRjo2anL4QC6AMtmReqgA5twV9DJh4EtlWFwr0cqMT0/3EdQ', 'signatureAlgorithm':'SHA256WithRSA'}
 # response = requests.post('http://example.com/api', data=data)
 
+response = requests.post('http://localhost:8000/charge/callback/pay', json=data)
+print("response: ", response.json())
+
+
 # 2.2. 上传文件 使用 files 参数上传文件
-files = {'file': open('file.txt', 'rb')}
+# files = {'file': open('file.txt', 'rb')}
 # response = requests.post('http://example.com/upload', files=files)
 
 
