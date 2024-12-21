@@ -105,7 +105,7 @@ def read_protocal(client_ts_path):
     return name_protocol_id_dict, protocol_id_name_dict
 
 # 查找玩家账号
-def find_device_id(env: str) -> str:
+def find_device_id(env: str, is_create_player: bool) -> str:
     resDeviceId = ""
     try:
         lock.acquire()
@@ -118,8 +118,8 @@ def find_device_id(env: str) -> str:
             curIndex = int(deviceId.split("_")[1])
             maxIndex = max(maxIndex, curIndex)
 
-            # 当前账号被使用
-            if value_dict["isUsed"] == 1:
+            # 创角 or 当前账号被使用
+            if is_create_player or value_dict["isUsed"] == 1:
                 continue
             else:
                 value_dict["isUsed"] = 1

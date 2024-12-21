@@ -12,7 +12,6 @@ import helper
 # protobuf 协议文件！
 from client_pb2 import *
 
-
 # 配置文件
 config_dict = helper.parse_config()
 # 协议
@@ -31,449 +30,456 @@ FILTER_PRINT_MESSAGE_SET = {}
 任务
 """
 class Task(threading.Thread):
-  def __init__(self, callback=None, callback2=None):
-    threading.Thread.__init__(self)
-    self.ip = config_dict["ip"]
-    self.port = config_dict["port"]
-    self.env = config_dict["env"]
-    # 是否创角
-    self.is_create_player = config_dict["is_create_player"] == 1
+    def __init__(self, playerCount=1, callbackByClose=None):
+        threading.Thread.__init__(self)
+        self.ws = config_dict["ws"]
+        self.env = config_dict["env"]
+        # 是否创角
+        self.is_create_player = config_dict["is_create_player"]
 
-    self.callback2 = callback2
+        self.playerCount = playerCount
+        self.callbackByClose = callbackByClose
 
-    self.name_alltimes_dict = {}
-    # 连接客户端
-    self.client = Client(self.ip, self.port, self.name_alltimes_dict, callback)
-    self.__init()
+        self.client_dict = list[Client]
+        self.name_alltimes_dict = {}
 
-    # 锁
-    self.lock = threading.Lock()
-    # 命令
-    self.commands = []
+        self.init = False
+        # 初始化客户端
+        self.__init_clients()
 
-
-  # 初始化
-  def __init(self):
-    # 注册
-    if self.is_create_player:
-      self.__register()
-    else:
-      flag_player_dict = helper.find_player_account(self.env)
-      need_create_player = flag_player_dict[0]
-      player_dict = flag_player_dict[1]
-      # 登录
-      if not need_create_player:
-        self.playerId = player_dict["playerId"]
-        self.account = player_dict["account"]
-        self.password = player_dict["password"]
-        self.client.send_msg_and_receive("ReqLoginAccount",
-                                         [self.account, self.password, player_dict["channel"], config_dict["version"], 0])
-      else:
-        # 注册
-        self.__register()
-
-  # 注册
-  def __register(self):
-    receive_dict = self.client.send_msg_and_receive("ReqRegisterTourist", ["test2", config_dict["version"], 0, "test22", 24013002])[0][1]
-    write_dict = {"isUsed": 1, "account": receive_dict['account'], "password": receive_dict['password'],
-                  "channel": receive_dict['channel'], "playerId": receive_dict['playerInfo']["playerId"]}
-    self.playerId = write_dict["playerId"]
-    self.account = write_dict["account"]
-    self.password = write_dict["password"]
-    # 登录
-    self.client.send_msg_and_receive("ReqLoginAccount", [self.account, self.password, write_dict["channel"], config_dict["version"], 0])
-    helper.add_player_account(self.env, self.playerId, write_dict)
+        # 锁
+        self.lock = threading.Lock()
+        # 命令
+        self.commands = []
 
 
-  def run(self) -> None:
-    t = 0
-    while True:
-      try:
-        self.lock.acquire()
-        all_commands = self.commands[:]
-        self.commands.clear()
-      except RuntimeError as e:
-        print(e)
-      finally:
-        self.lock.release()
+    # 初始化客户端
+    def __init_clients(self):
+        for i in range(self.playerCount):
+            try:
+                asyncio.run(self.__init_client())
+            except RuntimeError as e:
+                print("new Client fail i: ", i, e)
 
-      if len((all_commands)) <= 0:
-        # 超过3s没有任务，断开连接
-        if t >= 3:
-          break
-        t += 1
-        time.sleep(1)
-        # 保持心跳
-        self.send_msg_and_receive("ReqKeepAlive", [True])
-        continue
+        self.init = True
 
-      t = 0
-      # 发送请求
-      for protocol_name, params in all_commands:
-        self.send_msg_and_receive(protocol_name, params)
+    # do初始化客户端
+    async def __init_client(self):
+        try:
+            deviceId = helper.find_device_id(self.env, self.is_create_player)
+            client = Client(self.ws, self.env, deviceId, self.name_alltimes_dict)
+            # 建立连接
+            await client.connect()
+            self.client_dict[deviceId] = client
+        except RuntimeError as e:
+            print("new Client fail deviceId: ", deviceId, e)
 
-    self.close()
 
-  """
+    def run(self) -> None:
+        t = 0
+        while True:
+            try:
+                self.lock.acquire()
+                all_commands = self.commands[:]
+                self.commands.clear()
+            except RuntimeError as e:
+                print(e)
+            finally:
+                self.lock.release()
+
+            if len((all_commands)) <= 0:
+                # 超过3s没有任务，断开连接
+                if t >= 3:
+                    break
+                t += 1
+                time.sleep(1)
+                # 保持心跳
+                # self.send_msg_and_receive("ReqKeepAlive", [True])
+                continue
+
+            t = 0
+            # 发送请求
+            for protocol_name, params, callback in all_commands:
+                # self.send_msg_and_receive(protocol_name, params)
+                for client in self.client_dict.values():
+                    client.add_command(protocol_name, params, callback)
+
+        else:
+            self.task_close()
+
+    """
   添加指令
   """
-  def add_command(self, protocol_name: str, params: list):
-    try:
-      self.lock.acquire()
-      self.commands.append((protocol_name, params))
-    except RuntimeError as e:
-      print(e)
-    finally:
-      self.lock.release()
 
-  """
+    def add_command(self, protocol_name: str, params: list, callback=None):
+        try:
+            self.lock.acquire()
+            self.commands.append((protocol_name, params, callback))
+        except RuntimeError as e:
+            print(e)
+        finally:
+            self.lock.release()
+
+    """
   发送指令且接受回复
   """
-  def send_msg_and_receive(self, protocol_name, params):
-    return self.client.send_msg_and_receive(protocol_name, params)
 
+    def send_msg_and_receive(self, protocol_name, params):
+        # TODO delete
+        pass
+        # return self.client.send_msg_and_receive(protocol_name, params)
 
-
-  """
+    """
   关闭连接
   """
-  def close(self):
-    try:
-      if not self.callback2 is None:
-        print("开始关闭连接... name_alltimes_dict: ", self.name_alltimes_dict)
-        self.callback2(self.name_alltimes_dict)
 
-      time.sleep(3)
-      self.client.close()
-    except RuntimeError as e:
+    def task_close(self):
+        try:
+            if not self.callbackByClose is None:
+                print("开始关闭连接... name_alltimes_dict: ", self.name_alltimes_dict)
+                self.callbackByClose(self.name_alltimes_dict)
 
-      print(f"close client error! {e}")
-      pass
-    finally:
-      helper.reback_player_account(self.env, self.playerId)
+            for client in self.client_dict.values():
+                asyncio.run(client.client_close())
+
+            # TODO ugly delay!!!
+            time.sleep(3)
+        except RuntimeError as e:
+            print(f"close client error! {e}")
+        finally:
+            print("task close all clients success!")
+
+
 
 
 """
 客户端
 """
 class Client:
-  def __init__(self, url=config_dict["ws"], env=config_dict["env"], name_alltimes_dict={}, callback=None):
-    self.url = url
-    self.env = env
-    self.is_running = False
-    # 登录deviceId
-    self.deviceId = ''
+    def __init__(self, ws=None, env=None, deviceId=None, name_alltimes_dict={}):
+        self.ws = ws
+        self.env = env
+        # 登录deviceId
+        self.deviceId = deviceId
 
-    self.websocket = None
-    self.seq = 0
-    # 用于存储请求
-    self.queue = deque()
-    self.send_task = None
-    self.receive_task = None
+        self.is_running = False
 
-    # TODO 压测记录
-    self.name_alltimes_dict = name_alltimes_dict
-    self.callback = callback
+        self.websocket = None
+        self.seq = 0
+        # 用于存储请求
+        self.queue = deque()
+        self.send_task = None
+        self.receive_task = None
 
+        self.seq_callback_dict = {}
 
-  """
+        # TODO 压测记录
+        self.name_alltimes_dict = name_alltimes_dict
+
+    """
   建立连接
   """
-  async def connect(self):
-    """连接到 WebSocket 服务器"""
-    self.websocket = await websockets.connect(self.url)
-    self.is_running = True
-    print("已连接到 WebSocket 服务器")
+
+    async def connect(self):
+        """连接到 WebSocket 服务器"""
+        self.websocket = await websockets.connect(self.ws)
+        self.is_running = True
+        print("已连接到 WebSocket 服务器")
+
+        # 初始化
+        await self.__init()
+
+        # 启动发送消息的任务
+        self.send_task = asyncio.create_task(self.send_messages())
+        # 启动接收消息的任务
+        self.receive_task = asyncio.create_task(self.receive_messages())
+
+    def is_connect(self):
+        if self.websocket is None:
+            raise RuntimeError("未连接上服务器！")
 
     # 初始化
-    await self.__init()
+    async def __init(self):
+        # 1. 账号服进行游客登录
+        token = await self.__account_login()
+        print(f"deviceId: {self.deviceId}, token: {token}")
 
-    # 启动发送消息的任务
-    self.send_task = asyncio.create_task(self.send_messages())
-    # 启动接收消息的任务
-    self.receive_task = asyncio.create_task(self.receive_messages())
+        # 2. 游戏登录
+        login_res_msg_arr = await self.__send_msg_and_receive("ReqLoginMessage", {"token": token})
+        clientPlayerInfo = login_res_msg_arr[1].clientPlayerInfo
 
-  def is_connect(self):
-    if self.websocket is None:
-      raise RuntimeError("未连接上服务器！")
+        write_dict = {"isUsed": 1, "deviceId": self.deviceId, "playerId": clientPlayerInfo.id,
+                      "nick": clientPlayerInfo.nick}
+        helper.add_player_account(self.env, self.deviceId, write_dict)
 
+    # account服登录
+    async def __account_login(self):
+        data = {'guest': True, 'deviceId': self.deviceId, 'channel': 'dev'}
+        response = requests.post(config_dict["login"] + "/account/login", json=data)
+        res = response.json()
+        if res["code"] != 0:
+            raise RuntimeError("登录失败....")
 
-  # 初始化
-  async def __init(self):
-    deviceId = helper.find_device_id(self.env)
-    self.deviceId = deviceId
+        return res["data"]["token"]
 
-    # 1. 账号服进行游客登录
-    token = await self.__account_login(deviceId)
-    print("token: ", token)
+    """
+     添加命令
+    """
+    def add_command(self, protocol_name, params, callback=None):
+        encode_send_data = self.__encode_send_param(protocol_name, params)
+        # print("addCommand: ", protocol_name, " send_data: ", send_data)
 
-    # 2. 游戏登录
-    login_res_msg_arr = await self.__send_msg_and_receive("ReqLoginMessage", {"token": token})
-    clientPlayerInfo = login_res_msg_arr[1].clientPlayerInfo
+        if callback is not None:
+            self.seq_callback_dict[self.seq] = callback
+        # 将请求添加到队列
+        self.queue.append(encode_send_data)
 
-    write_dict = {"isUsed": 1, "deviceId" : deviceId, "playerId" : clientPlayerInfo.id, "nick" : clientPlayerInfo.nick}
-    helper.add_player_account(self.env, deviceId, write_dict)
-
-
-  # account服登录
-  async def __account_login(self, deviceId: str):
-    data = {'guest': True, 'deviceId': deviceId, 'channel': 'dev'}
-    response = requests.post(config_dict["login"] + "/account/login", json=data)
-    res = response.json()
-    if res["code"] != 0:
-      raise RuntimeError("登录失败....")
-
-    return res["data"]["token"]
-
-  """
-  添加命令
-  """
-  def add_command(self, protocol_name, params):
-    encode_send_data = self.__encode_send_param(protocol_name, params)
-    # print("addCommand: ", protocol_name, " send_data: ", send_data)
-    # 将请求添加到队列
-    self.queue.append(encode_send_data)
-
-  """
+    """
   发送消息 并接收
   """
-  async def __send_msg_and_receive(self, protocol_name, params) -> []:
-    await self.__send_msg(protocol_name, params)
-    # 处理请求
-    return await self.__receive()
 
+    async def __send_msg_and_receive(self, protocol_name, params) -> []:
+        await self.__send_msg(protocol_name, params)
+        # 处理请求
+        return await self.__receive()
 
-  """
+    """
   发送消息
   """
-  async def __send_msg(self, protocol_name, params):
-    """发送请求到 WebSocket 服务器"""
-    self.is_connect()
+    async def __send_msg(self, protocol_name, params):
+        """发送请求到 WebSocket 服务器"""
+        self.is_connect()
 
-    # TODO 暂时不支持数组！ 将参数的数组类型转为字典类型
-    # if isinstance(params, list):
-    #   params = self.__convert2dict(protocol_name, params)
+        # TODO 暂时不支持数组！ 将参数的数组类型转为字典类型
+        # if isinstance(params, list):
+        #   params = self.__convert2dict(protocol_name, params)
 
-    # 发送
-    encode_send_data = self.__encode_send_param(protocol_name, params)
-    # 接收
-    await self.websocket.send(encode_send_data)
+        # 发送
+        encode_send_data = self.__encode_send_param(protocol_name, params)
+        # 接收
+        await self.websocket.send(encode_send_data)
 
-  """
+    """
   接受消息
   """
-  async def __receive(self) -> []:
-    self.is_connect()
+    async def __receive(self) -> []:
+        self.is_connect()
 
-    receive_msg = None
+        messageProxy = None
+        # 持续接收来自 WebSocket 服务器的消息
+        try:
+            response = await self.websocket.recv()
+            messageProxy = self.__decode_receive_msg(response)
 
-    # 持续接收来自 WebSocket 服务器的消息
-    try:
-      response = await self.websocket.recv()
+            # 记录接收时间
+            # self.__set_name_alltimes_dict(receive_msg[0], self.__getMilliseconds())
 
-      receive_msg = self.__decode_receive_msg(response)
-      # print(f"receive_msg: {receive_msg}")
+        except websockets.ConnectionClosed:
+            print("连接已关闭")
 
-      if not self.callback is None:
-        self.callback(receive_msg[0], receive_msg[1])
+        return messageProxy.resMessage
 
-      # 记录接收时间
-      # self.__set_name_alltimes_dict(receive_msg[0], self.__getMilliseconds())
-
-    except websockets.ConnectionClosed:
-      print("连接已关闭")
-
-    return receive_msg
-
-
-  """ 
+    """ 
   持续向 WebSocket 服务器发送消息
   """
-  async def send_messages(self):
-    while not self.is_running:
-      await asyncio.sleep(1)
-      print("send_messages - 等待连接...")
 
-    times = 0
+    async def send_messages(self):
+        while not self.is_running:
+            await asyncio.sleep(1)
+            print("send_messages - 等待连接...")
 
-    while True:
-      if len(self.queue) > 0:
         times = 0
-        # 从队列中取出请求
-        message = self.queue.popleft()
-        # print("send_data: ", message)
-        # 发送请求
-        await self.websocket.send(message)
 
-        # 空
-      else:
-        times = times + 1
-        await asyncio.sleep(1)
-        if times > 3:
-          self.is_running = False
-          print("running over!")
-          break
+        while True:
+            if len(self.queue) > 0:
+                times = 0
+                # 从队列中取出请求
+                message = self.queue.popleft()
+                # print("send_data: ", message)
+                # 发送请求
+                await self.websocket.send(message)
 
+                # 空
+            else:
+                times = times + 1
+                await asyncio.sleep(1)
+                if times > 3:
+                    # self.is_running = False
+                    print("running over!")
+                    break
 
-  """
+    """
   持续接收来自 WebSocket 服务器的消息
   """
-  async def receive_messages(self):
-    while not self.is_running:
-      time.sleep(1)
-      print("receive_messages - 等待连接...")
 
-    while self.is_running:
-      try:
-        response = await self.websocket.recv()
-        receive_msg = self.__decode_receive_msg(response)
+    async def receive_messages(self):
+        while not self.is_running:
+            time.sleep(1)
+            print("receive_messages - 等待连接...")
 
-        if not self.callback is None:
-          self.callback(receive_msg[0], receive_msg[1])
+        while self.is_running:
+            try:
+                response = await self.websocket.recv()
+                messageProxy = self.__decode_receive_msg(response)
 
-        # 记录接收时间
-        # self.__set_name_alltimes_dict(receive_msg[0], self.__getMilliseconds())
-      except websockets.ConnectionClosed as e:
-        print("连接已关闭")
-        self.is_running = False
-        break
+                # TODO 回调 test
+                seq = messageProxy.seq
+                if seq in self.seq_callback_dict:
+                    callback = self.seq_callback_dict[seq](messageProxy.resMessage)
+                    # callback(messageProxy.resMessage)
 
-  # 获取当前时间的毫秒值
-  def __getMilliseconds(self):
-    return int(time.time() * 1000)
+                # 记录接收时间
+                # self.__set_name_alltimes_dict(receive_msg[0], self.__getMilliseconds())
+            except websockets.ConnectionClosed as e:
+                print("连接已关闭")
+                # self.is_running = False
+                break
 
-  """
- 延迟关闭
+    # 获取当前时间的毫秒值
+    def __getMilliseconds(self):
+        return int(time.time() * 1000)
+
+    """
+ 延迟关闭 TODO delete
  """
-  async def delay_close(self):
-    """定期发送心跳消息以保持连接"""
-    while self.is_running:
-      # 发送心跳消息
-      # print("ping...")
-      # 每1秒发送一次心跳
-      await asyncio.sleep(1)
 
-    else:
-      await self.__close()
+    async def delay_close(self):
+        """定期发送心跳消息以保持连接"""
+        while self.is_running:
+            # 发送心跳消息
+            # print("ping...")
+            # 每1秒发送一次心跳
+            await asyncio.sleep(1)
+        else:
+            await self.client_close()
 
-  """
+    """
   断开连接
   """
-  async def __close(self):
-    try:
-      if self.is_running:
-        print("start close...")
-        # 停止接收消息
-        self.is_running = False
-        # 取消发送任务
-        if self.send_task:
-          self.send_task.cancel()
-        # 取消接收任务
-        if self.receive_task:
-          self.receive_task.cancel()
 
-        # 关闭 WebSocket 连接
-        await self.websocket.close()
-      print("已关闭 WebSocket 连接")
+    async def client_close(self):
+        try:
+            if self.is_running:
+                print("start close...")
+                # 停止接收消息
+                self.is_running = False
+                # 取消发送任务
+                if self.send_task:
+                    self.send_task.cancel()
+                # 取消接收任务
+                if self.receive_task:
+                    self.receive_task.cancel()
 
-    except RuntimeError as e:
-      print("close client error! {e}", e)
-    finally:
-      helper.reback_player_account(self.env, self.deviceId)
-      print("end close...")
+                # 关闭 WebSocket 连接
+                await self.websocket.close()
+            print("已关闭 WebSocket 连接")
 
-  # 获取发送字节数组
-  def __encode_send_param(self, protocol_name="", paramsJ={}):
-    # if not protocol_name.startswith("C"):
-    #   raise ValueError("请求类型错误！")
+        except RuntimeError as e:
+            print("close client error! {e}", e)
+        finally:
+            helper.reback_player_account(self.env, self.deviceId)
+            print("end close...")
 
-    messageOb = self.__create_ob(protocol_name, paramsJ)
-    # 使用 getattr() 调用指定名称的方法
-    messageObSerializeApi = getattr(messageOb, "SerializeToString")
-    messageSerializedData = messageObSerializeApi()
-    # print("messageSerializedData: ", messageSerializedData)
+    # 获取发送字节数组
+    def __encode_send_param(self, protocol_name="", paramsJ={}):
+        # if not protocol_name.startswith("C"):
+        #   raise ValueError("请求类型错误！")
 
-    # seq++
-    self.seq = self.seq + 1
-    cmd = int(name_protocol_id_dict[protocol_name])
-    messageProxyDict = {"cmd": cmd, "seq": self.seq, "data": messageSerializedData}
-    messageProxyOb = self.__create_ob("MessageProxy", messageProxyDict)
-    # 使用 getattr() 调用指定名称的方法
-    messageProxySerializeApi = getattr(messageProxyOb, "SerializeToString")
-    messageProxySerializeData = messageProxySerializeApi()
+        messageOb = self.__create_ob(protocol_name, paramsJ)
+        # 使用 getattr() 调用指定名称的方法
+        messageObSerializeApi = getattr(messageOb, "SerializeToString")
+        messageSerializedData = messageObSerializeApi()
+        # print("messageSerializedData: ", messageSerializedData)
 
-    # print("messageProxySerializeData: ", messageProxySerializeData)
+        # seq++
+        self.seq = self.seq + 1
+        cmd = int(name_protocol_id_dict[protocol_name])
+        messageProxyDict = {"cmd": cmd, "seq": self.seq, "data": messageSerializedData}
+        messageProxyOb = self.__create_ob("MessageProxy", messageProxyDict)
+        # 使用 getattr() 调用指定名称的方法
+        messageProxySerializeApi = getattr(messageProxyOb, "SerializeToString")
+        messageProxySerializeData = messageProxySerializeApi()
 
-    return messageProxySerializeData
+        # print("messageProxySerializeData: ", messageProxySerializeData)
 
+        return messageProxySerializeData
 
+    # 解码返回消息
+    def __decode_receive_msg(self, serialized_data):
+        # 反序列化
+        # messageProxy = MessageProxy()
+        messageProxy = self.__create_ob("MessageProxy", {})
+        messageProxy.ParseFromString(serialized_data)
+        # print("decode - messageProxy: ", messageProxy)
 
-  # 解码返回消息
-  def __decode_receive_msg(self, serialized_data):
-    # 反序列化
-    # messageProxy = MessageProxy()
-    messageProxy = self.__create_ob("MessageProxy", {})
-    messageProxy.ParseFromString(serialized_data)
-    # print("decode - messageProxy: ", messageProxy)
+        cmd = messageProxy.cmd
+        seq = messageProxy.seq
+        errorCode = messageProxy.errorCode
+        resMessage = None
+        protocol_name = ""
 
-    cmd = messageProxy.cmd
-    seq = messageProxy.seq
-    errorCode = messageProxy.errorCode
-    resMessage = None
-    protocol_name = ""
+        data = messageProxy.data
+        if messageProxy.cmd is None or messageProxy.cmd == 0 or data is None:
+            return messageProxy, None
+        else:
+            protocol_name = protocol_id_name_dict[str(messageProxy.cmd)]
+            resMessage = self.__create_ob(protocol_name, {})
+            resMessage.ParseFromString(data)
 
-    data = messageProxy.data
-    if messageProxy.cmd is None or messageProxy.cmd == 0 or data is None:
-      return messageProxy, None
-    else:
-      protocol_name = protocol_id_name_dict[str(messageProxy.cmd)]
-      resMessage = self.__create_ob(protocol_name, {})
-      resMessage.ParseFromString(data)
+        # 将 protobuf 对象转换为 JSON 字符串
+        resMessage_json = json_format.MessageToJson(resMessage).replace("\n", "").replace(" ", "")
 
-    # 将 protobuf 对象转换为 JSON 字符串
-    resMessage_json = json_format.MessageToJson(resMessage).replace("\n", "").replace(" ", "")
+        if protocol_name not in FILTER_PRINT_MESSAGE_SET:
+            print("seq: ", seq, " cmd: ", cmd, " errorCode: ", errorCode, " protocolName: ", protocol_name,
+                  " resMessage: ", resMessage_json)
 
-    if protocol_name not in FILTER_PRINT_MESSAGE_SET:
-      print("seq: ", seq, " cmd: ", cmd, " errorCode: ", errorCode, " protocolName: ", protocol_name, " resMessage: ", resMessage_json)
+        messageProxy.resMessage = resMessage
 
-    return messageProxy, resMessage
+        return messageProxy
 
-  # 创建对象
-  def __create_ob(self, protocol_name: str, attbute_value_dict):
-    class_obj = globals()[protocol_name]
-    class_obj = class_obj()
+    # 创建对象
+    def __create_ob(self, protocol_name: str, attbute_value_dict):
+        class_obj = globals()[protocol_name]
+        class_obj = class_obj()
 
-    for key, value in attbute_value_dict.items():
-      setattr(class_obj, key, value)
+        for key, value in attbute_value_dict.items():
+            setattr(class_obj, key, value)
 
-    return class_obj
+        return class_obj
 
 
 """
 main
 """
+
+
 async def main():
-  client = Client()
-  # 建立连接
-  await client.connect()
+    client = Client()
+    # 建立连接
+    await client.connect()
 
-  # ===============================================================================>
-  # 请求玩家个人信息  id: 玩家id
-  # client.add_command("CWGetPlayerInfoMessage", {})
-  # 请求获取自己赠送礼物记录列表  position: 槽位(从0开始)   count: 总数
-  # client.add_command("CWGetPlayerSendGiftListMessage", {"position": 2, "count": 200})
-  # 请求获取通用表情列表
-  # client.add_command("CWGetCommonEmoteListMessage", {})
+    # ===============================================================================>
+    # 请求玩家个人信息  id: 玩家id
+    # client.add_command("CWGetPlayerInfoMessage", {})
+    # 请求获取自己赠送礼物记录列表  position: 槽位(从0开始)   count: 总数
+    # client.add_command("CWGetPlayerSendGiftListMessage", {"position": 2, "count": 200})
+    # 请求获取通用表情列表
+    # client.add_command("CWGetCommonEmoteListMessage", {})
 
-  # 请求标记完成新手引导
-  # client.add_command("CWMarkFinishGuideMessage", {})
+    # 请求标记完成新手引导
+    def callback(resMsg):
+        if 3 > 0:
+            print("3333")
+    client.add_command("CWMarkFinishGuideMessage", {}, callback)
 
 
 
-  # ===============================================================================>
-  # 等待一段时间后关闭连接
-  await client.delay_close()
+
+    # ===============================================================================>
+    # 等待一段时间后关闭连接
+    await client.delay_close()
+
 
 if __name__ == '__main__':
-  # helper.handle_dirty_players_config_data()
-  asyncio.run(main())
+    # helper.handle_dirty_players_config_data()
+    asyncio.run(main())

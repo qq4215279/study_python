@@ -173,7 +173,9 @@ class ForceModule(threading.Thread):
         # 是否终止线程
         self.stop = False
         self.first = True
-        self.task = Task(self.handle_receive, self.handle_module_end)
+        # 玩家数量
+        self.playerCount = 1
+        self.task = Task(self.playerCount, self.handle_receive, self.handle_module_end)
         self.force_task_callback = force_task_callback
         # 休眠时间
         self.ticket = 1
