@@ -2,10 +2,11 @@
 
 import configparser
 import json
+import logging
 import os
 import threading
 import datetime
-
+import time
 
 # 获取 api.ini 配置文件所在位置
 API_INI_PATH = f"{os.path.dirname(__file__)}/config/api.ini"
@@ -16,6 +17,55 @@ PLAYERS_INI_PATH = f"{os.path.dirname(__file__)}/config/players.ini"
 帮助类
 """
 lock = threading.Lock()
+
+
+"""
+返回结果
+"""
+class ResponseResult:
+    def __init__(self, cmd=0, seq=0, errorCodeValue=None, errorCode=None, resMessage=None, protocol_name=""):
+        self.cmd = cmd
+        self.seq = seq
+        self.errorCodeValue = errorCodeValue
+        self.errorCode = errorCode
+        self.resMessage = resMessage
+        self.protocol_name = protocol_name
+
+"""
+玩家信息
+"""
+class Player:
+    def __init__(self):
+        # 玩家id
+        self.playerId = 0
+        self.token = ""
+        # 玩家金币
+        self.gold = 0
+        # 玩家钻石
+        self.diamond = 0
+
+"""
+baloot 房间信息 - 内部类
+"""
+class BalootGameOb:
+    def __init__(self):
+        # 是否匹配中
+        self.isMatch = False
+        # 房间id
+        self.roomId = 11
+        # 金币下限
+        self.goldLowerLimit = 100
+        # 金币上限
+        self.goldUpperLimit = -1
+        # seq
+        self.seq = -1
+        # seatId
+        self.seatId = 0
+
+        # 桌子基本信息（含玩家信息） - GameTableBaseBean
+        self.baseInfo = None
+        # 当前叫牌玩家列表 - BalootTableBean
+        self.balootInfo = None
 
 """
 解析配置文件
@@ -35,7 +85,7 @@ def parse_config():
         for option in config.options(section):
             value = config.get(section, option)
 
-            if option.find("is_create_player") != -1 or option.find("is_record") != -1 or option.find("player_count") != -1:
+            if option.find("is_create_player") != -1 or option.find("is_record") != -1 or option.find("task_player_limit") != -1:
                 config_dict[option] = int(value)
             elif option.find("force_modules") != -1:
                 force_modules_dict = {}
@@ -75,6 +125,19 @@ def __set_choose_server_config(config_dict):
         config_dict["ws"] = config_dict["test_ws"]
         config_dict["login"] = config_dict["test_login"]
         config_dict["env"] = config_dict["test_env"]
+
+    # stress
+    elif choose_server_config_prefix == 'stress':
+        config_dict["ws"] = config_dict["stress_ws"]
+        config_dict["login"] = config_dict["stress_login"]
+        config_dict["env"] = config_dict["stress_env"]
+
+    # review
+    elif choose_server_config_prefix == 'review':
+        config_dict["ws"] = config_dict["review_ws"]
+        config_dict["login"] = config_dict["review_login"]
+        config_dict["env"] = config_dict["review_env"]
+
     else:
         config_dict["ws"] = config_dict["liuzhen_ws"]
         config_dict["login"] = config_dict["liuzhen_login"]
@@ -97,7 +160,7 @@ def read_protocal(client_ts_path):
                 continue
             arr = line.split(":")
             proto_name = arr[0].strip()
-            proto_id = arr[1].split(",")[0].strip()
+            proto_id = int(arr[1].split(",")[0].strip())
 
             name_protocol_id_dict[proto_name] = proto_id
             protocol_id_name_dict[proto_id] = proto_name
@@ -105,7 +168,12 @@ def read_protocal(client_ts_path):
     return name_protocol_id_dict, protocol_id_name_dict
 
 # 查找玩家账号
-def find_device_id(env: str, is_create_player: bool) -> str:
+def find_device_id(env: str, is_create_player: bool, prefix_name: str) -> str:
+    if len(prefix_name) <= 0:
+        prefix_name = 0
+
+    # 前缀
+    prefix = env + "_" + prefix_name + "_"
     resDeviceId = ""
     try:
         lock.acquire()
@@ -115,11 +183,15 @@ def find_device_id(env: str, is_create_player: bool) -> str:
         maxIndex = 0
 
         for deviceId, value_dict in config_players_dict.items():
-            curIndex = int(deviceId.split("_")[1])
+            arr = deviceId.split("_")
+            curIndex = int(arr[len(arr) - 1])
             maxIndex = max(maxIndex, curIndex)
 
             # 创角 or 当前账号被使用
             if is_create_player or value_dict["isUsed"] == 1:
+                continue
+            # 找相同前缀
+            elif deviceId.find(prefix) == -1:
                 continue
             else:
                 value_dict["isUsed"] = 1
@@ -129,9 +201,11 @@ def find_device_id(env: str, is_create_player: bool) -> str:
                 resDeviceId = deviceId
                 break
 
-        # 拼接 deviceId: env_index
+        # 拼接 deviceId: env_prefix_name_index
         if resDeviceId == "":
-            resDeviceId = env + "_" + str(maxIndex + 1)
+            resDeviceId = prefix + str(maxIndex + 1)
+            write_dict = {"isUsed": 1, "deviceId": resDeviceId, "playerId": 0, "nick": ""}
+            __write_players_config(env, resDeviceId, json.dumps(write_dict))
 
     except BaseException as e:
         print(e)
@@ -264,7 +338,7 @@ class InterfaceInfo:
             # self.lock.release()
 
 class RecordInfo:
-    def __init__(self, startTime: int, endTime: int):
+    def __init__(self, startTime: float, endTime: float):
         # 压测开始时间
         self.startTime = startTime
         # 压测结束时间
@@ -364,3 +438,31 @@ class RecordInfo:
                 value = self.maxAvg100Mills[i - 1]
                 file.writelines(f"    协议名称: {value[0]} , 平均访问时间: {int(value[1])} 毫秒, 总访问次数: {value[2]} \n")
             file.writelines("汇总结束 ------------------------------------------------------> \n\n\n")
+
+
+# ==================================================================================>
+
+"""
+获取当前时间的毫秒值
+"""
+def getMilliseconds():
+    return int(time.time() * 1000)
+
+
+"""
+获取日志对象
+"""
+def get_log():
+    # 创建一个文件处理器，指定编码为 UTF-8
+    file_handler = logging.FileHandler('test.log', mode='w', encoding='utf-8')
+    # 创建一个控制台处理器，用于将日志输出到控制台
+    console_handler = logging.StreamHandler()
+    # 配置日志记录
+    logging.basicConfig(
+        level=logging.INFO,  # 设置日志级别
+        format='%(asctime)s - %(levelname)s - %(message)s',  # 设置日志格式
+        handlers=[file_handler, console_handler],
+        # filemode='a'  # 设置文件模式为附加模式（'w'为覆盖模式）
+    )
+    # 创建一个日志记录器
+    return logging.getLogger(__name__)
