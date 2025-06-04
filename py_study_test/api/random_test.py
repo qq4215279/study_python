@@ -26,16 +26,19 @@ api:
 
 
 def random_test():
-    print("范围整数: ", random.randint(1, 2))
-    print("0-1随机浮点数: ", random.random())
-    print("范围随机浮点数: ", random.uniform(1, 4))
-    fruits = ['apple', 'banana', 'cherry', 'date']
-    print("随机选择一个元素: ", random.choice(fruits))
-    print("指定范围内的随机整数: ", random.randrange(1, 10, 2))
-    print("随机选择 k 个不重复的元素: ", random.sample((1, 4, 55, 100, 999), 3))
-    random.shuffle(fruits)
-    print("打乱列表中的元素顺序: ", fruits)
+    for i in range(10):
+        print("范围整数: ", random.randint(1, 2))
+        print("0-1随机浮点数: ", random.random())
+        print("范围随机浮点数: ", random.uniform(1, 4))
+        fruits = ['apple', 'banana', 'cherry', 'date']
+        print("随机选择一个元素: ", random.choice(fruits))
+        print("指定范围内的随机整数: ", random.randrange(1, 10, 2))
+        print("随机选择 k 个不重复的元素: ", random.sample((1, 4, 55, 100, 999), 3))
+        random.shuffle(fruits)
+        print("打乱列表中的元素顺序: ", fruits)
 
+        print("")
+        print("=============>")
 
 
 if __name__ == '__main__':

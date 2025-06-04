@@ -24,7 +24,7 @@ async def echo():
         # response = await websocket.recv()
         # print(f"Received from server: {response}")
 
-        # test2
+        # test_baloot
         # 创建一个独立的任务来运行 keep_alive
         asyncio.create_task(keep_alive(websocket))
 

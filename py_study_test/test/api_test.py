@@ -9,6 +9,8 @@ import struct
 import threading
 import queue
 
+import pwd
+
 # 配置文件
 config_dict = helper.parse_config()
 
@@ -68,7 +70,7 @@ class Task(threading.Thread):
 
     # 注册
     def __register(self):
-        receive_dict = self.client.send_msg_and_receive("ReqRegisterTourist", ["test2", config_dict["version"], 0, "test22", 24013002])[0][1]
+        receive_dict = self.client.send_msg_and_receive("ReqRegisterTourist", ["test_baloot", config_dict["version"], 0, "test22", 24013002])[0][1]
         write_dict = {"isUsed": 1, "account": receive_dict['account'], "password": receive_dict['password'],
                       "channel": receive_dict['channel'], "playerId": receive_dict['playerInfo']["playerId"]}
         self.playerId = write_dict["playerId"]

@@ -1,7 +1,8 @@
 # encoding: utf-8
 
 import asyncio
-import time
+# asyncio 可以与其他库一起使用，例如 aiohttp，进行异步 HTTP 请求：
+import aiohttp
 
 """
 asyncio 是 Python 标准库中的一个模块，专门用于编写异步 I/O 操作的代码。
@@ -38,6 +39,7 @@ asyncio 提供了事件循环、任务管理、网络 I/O、进程间通信等�
 2. 协程与任务
    2.1. asyncio.create_task()  将协程包装为任务，并将其调度到事件循环中。返回一个 Task 对象。eg: task = asyncio.create_task(some_coroutine())
    2.2. asyncio.gather()  并发运行多个协程，等待它们全部完成，并返回结果的列表。eg: results = await asyncio.gather(coroutine1(), coroutine2())
+        asyncio.gather(*tasks, return_exceptions=True)   设置return_exceptions=True来实现。这将使得 asyncio.gather 在遇到异常时不会取消其他任务
    2.3. asyncio.wait()  等待多个任务完成，返回一个包含完成和未完成任务的集合。eg: done, pending = await asyncio.wait({task1, task2})
    2.4. asyncio.shield()  保护某个任务不被取消。eg: await asyncio.shield(some_task())
    
@@ -62,7 +64,7 @@ asyncio 提供了事件循环、任务管理、网络 I/O、进程间通信等�
 # 1. 定义协程
 async def fetch_data():
     print("start fetching data...")
-    await asyncio.sleep(10)  # 模拟网络请求
+    await asyncio.sleep(5)  # 模拟网络请求
     return "fetched finish"
 
 def sync_fetch_data():
@@ -78,10 +80,9 @@ async def main():
     print(data2)
 
 # 2. 使用协程
-print("start 使用协程 ======================================>")
+print("\n\nstart main 使用协程 ======================================>")
 asyncio.run(main())
-print("end 使用协程 ======================================>")
-print("")
+print("end main 使用协程 ======================================>")
 
 
 # 3. 创建任务
@@ -99,7 +100,10 @@ async def main_task():
     await t1
     await t2
 
+print("\n\nasyncio.run main_task start ===============================================>")
 asyncio.run(main_task())
+print("asyncio.run main_task end ===============================================>")
+
 
 
 # 4. 可以同时运行多个协程并收集结果：
@@ -111,13 +115,12 @@ async def main_gather():
     results = await asyncio.gather(fetch_data_x(1), fetch_data_x(2), fetch_data_x(3))
     print(results)
 
+print("\n\nasyncio.run main_gather start ===============================================>")
 asyncio.run(main_gather())
+print("asyncio.run main_gather end ===============================================>")
 
 
 # 5. 异步网络请求
-# asyncio 可以与其他库一起使用，例如 aiohttp，进行异步 HTTP 请求：
-import aiohttp
-
 async def fetch_http(url):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
@@ -127,8 +130,9 @@ async def main_http():
     html = await fetch_http('https://example.com')
     print(html)
 
-asyncio.run(main())
-
+print("\n\nasyncio.run main_http start ===============================================>")
+asyncio.run(main_http())
+print("asyncio.run main_http end ===============================================>")
 
 # 6. 异常处理
 # 在异步编程中，异常处理与同步编程类似，但需要在协程中进行处理：
@@ -141,4 +145,6 @@ async def main_except():
     except ValueError as e:
         print(f"Caught an exception: {e}")
 
+print("\n\nasyncio.run main_except start ===============================================>")
 asyncio.run(main_except())
+print("asyncio.run main_except end ======================================================>")
