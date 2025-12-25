@@ -4,7 +4,6 @@ import helper
 from helper import BalootGameOb
 from api_test import Task, Client, ResponseResult, name_protocol_id_dict, log
 # protobuf 协议文件！
-from client_pb2 import *
 
 import random
 import threading
