@@ -3,7 +3,6 @@ import dbutil
 import os
 import sys
 from jinja2 import *
-import zlib
 from array import array
 import datetime
 
@@ -121,7 +120,7 @@ def setter(columnName):
 
 class Loader(BaseLoader):
     is_usable = True
-    env = Environment(loader=FileSystemLoader("."))
+    env = Environment(loader=FileSystemLoader(""))
     env.template_class = Template
     env.globals['tableToClass'] = tableToClass
     env.globals['getResultMapName'] = getResultMapName

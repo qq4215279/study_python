@@ -8,7 +8,7 @@ from array import array
 
 class Loader( BaseLoader ):
     is_usable = True
-    env = Environment( loader=FileSystemLoader("."))
+    env = Environment(loader=FileSystemLoader(""))
     env.template_class = Template
 
 

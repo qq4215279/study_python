@@ -1,12 +1,7 @@
 #-*-coding:utf-8-*-
 import dbutil
 import os
-import sys
-import zlib
-from array import array
 import zipfile
-import shutil
-
 
 #查询列信息
 COLUMN_INFO = '''
