@@ -229,3 +229,62 @@ Python 在查找“名称”时，是按照 LEGB 规则查找的：Local-->Enclo
 如果某个 name 映射在局部(local)命名空间中没有找到，接下来就会在闭包作用域(enclosed)进行搜索，如果闭包作用域也没有找到，Python 就会到全局(global)命名空间中进行查找，
 最后会在内建(built-in)命名空间搜索 （如果一个名称在所有命名空间中都没有找到，就会产生一个 NameError）。
 '''
+
+
+
+"""
+装饰器
+在代码运行期间，可以动态增加函数功能的方式，被称为装饰器【Decorator】 通过闭包函数实现
+也就是说，在不修改原函数的基础上，给原函数增加功能
+好处：在团队开发中，如果两个或者两个以上的程序员会用到相同的功能，但是功能又有细微的差别，采用装饰器：相互不影响，代码简化
+
+注意:
+1.在使用装饰器的简写方式的时候,原函数必须在装饰器函数的下面
+2.outer就是装饰器函数.  @outer等价于  test = outer(test)
+"""
+
+# 系统的简写
+# a.书写闭包函数    此处的outer函数就是装饰器函数
+def outer(fn):  # b. fn表示形参,  实际调用的时候传递的是原函数的名字
+    def inner():
+        fn()  # c.调用原函数
+        # d. 给原函数添加功能,   注意:添加的功能可以写在原函数的上面也可以写在原函数的下面
+
+    print("我很好")
+    return inner
+
+
+# test = outer(test)
+
+# 装饰器的简写方式 @ + 装饰器名称
+@outer  # 等价于  =====>test = outer(test)
+def test():
+    print("你好啊!")
+
+
+test()
+
+# 不定长参数的装饰器(通用装饰器)
+# 同一个装饰器装饰多个函数
+def jisuan(fn):
+    def inner(*args):
+        print("数学运算的结果是:", end=" ")
+        fn(*args)
+
+    return inner
+
+
+@jisuan
+def add(a, b):
+    print(a + b)
+
+
+add(12, 34)
+
+
+@jisuan
+def cha(a, b, c):
+    print(a - b - c)
+
+
+cha(100, 23, 26)

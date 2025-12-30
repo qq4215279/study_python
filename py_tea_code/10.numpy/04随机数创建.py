@@ -1,5 +1,13 @@
 #导入模块
 import numpy as np
+
+"""
+随机数创建
+numpy.random.random(size=None)
+该方法返回[0.0, 1.0)范围的随机数。
+该方法有三个参数 low、high、size 三个参数。默认 high 是 None,如果只有 low，那范围就是[0,low)。如果有 high，范围就是[low,high)。
+"""
+
 def randomTest():
     # 使用random创建一维数组 [0.0,1.0)
     a = np.random.random(size=5)
