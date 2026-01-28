@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上海一天旅游攻略 - 2026-01-16</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        .section-title {
+            font-size: 1.8em;
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title::before {
+            content: '';
+            width: 5px;
+            height: 30px;
+            background: #667eea;
+            border-radius: 3px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        tbody tr {
+            transition: background-color 0.3s;
+        }
+        
+        tbody tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .time-cell {
+            font-weight: 600;
+            color: #667eea;
+            white-space: nowrap;
+        }
+        
+        .activity-cell {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+        
+        .location-cell {
+            color: #666;
+        }
+        
+        .description-cell {
+            color: #555;
+            line-height: 1.6;
+        }
+        
+        .tips-cell {
+            color: #888;
+            font-style: italic;
+            background-color: #fff9e6;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #ffc107;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .info-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .info-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .info-card ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .info-card li {
+            padding: 8px 0;
+            color: #555;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .info-card li:last-child {
+            border-bottom: none;
+        }
+        
+        .info-card li::before {
+            content: '✓ ';
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .food-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .food-tag {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        .tips-list {
+            background: #fff9e6;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .tips-list li {
+            margin: 10px 0;
+            color: #555;
+            line-height: 1.6;
+        }
+        
+        .tips-list li::before {
+            content: '💡 ';
+            margin-right: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            table {
+                font-size: 0.9em;
+            }
+            
+            th, td {
+                padding: 10px;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗺️ 上海一天旅游攻略</h1>
+            <p>日期：2026-01-16 | 城市：上海</p>
+        </div>
+        
+        <div class="content">
+            <!-- 行程安排表格 -->
+            <div class="section">
+                <div class="section-title">📅 行程安排</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">时间</th>
+                            <th style="width: 20%;">活动</th>
+                            <th style="width: 15%;">地点</th>
+                            <th style="width: 30%;">说明</th>
+                            <th style="width: 20%;">提示</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr>
+                            <td class="time-cell">08:30-09:30</td>
+                            <td class="activity-cell">早餐 + 外滩晨景</td>
+                            <td class="location-cell">外滩</td>
+                            <td class="description-cell">品尝上海特色早餐（生煎包、小笼包），欣赏黄浦江晨景和万国建筑博览群</td>
+                            <td class="tips-cell">建议早点到达，避开人流高峰，可以拍到更美的照片</td>
+                        </tr>
+                        <tr>
+                            <td class="time-cell">09:30-11:00</td>
+                            <td class="activity-cell">外滩漫步 + 南京路步行街</td>
+                            <td class="location-cell">外滩 → 南京路步行街</td>
+                            <td class="description-cell">沿着外滩漫步，欣赏黄浦江两岸风光，然后前往南京路步行街购物</td>
+                            <td class="tips-cell">南京路步行街是上海最著名的商业街，可以购买一些上海特产</td>
+                        </tr>
+                        <tr>
+                            <td class="time-cell">11:00-12:30</td>
+                            <td class="activity-cell">豫园 + 城隍庙</td>
+                            <td class="location-cell">豫园及城隍庙商圈</td>
+                            <td class="description-cell">游览古典园林豫园，体验传统建筑艺术，在城隍庙品尝上海小吃</td>
+                            <td class="tips-cell">豫园需要门票，建议提前购买。城隍庙小吃街有很多上海特色美食</td>
+                        </tr>
+                        <tr>
+                            <td class="time-cell">12:30-13:30</td>
+                            <td class="activity-cell">前往陆家嘴</td>
+                            <td class="location-cell">陆家嘴金融区</td>
+                            <td class="description-cell">乘坐地铁或轮渡前往浦东陆家嘴，沿途可以休息</td>
+                            <td class="tips-cell">可以乘坐2号线地铁，或者体验黄浦江轮渡（推荐，风景好）</td>
+                        </tr>
+                        <tr>
+                            <td class="time-cell">13:30-15:30</td>
+                            <td class="activity-cell">东方明珠 / 上海中心大厦</td>
+                            <td class="location-cell">陆家嘴</td>
+                            <td class="description-cell">登高俯瞰上海全景，感受现代化都市的魅力</td>
+                            <td class="tips-cell">建议提前网上购票，避免排队。上海中心大厦是上海第一高楼</td>
+                        </tr>
+                        <tr>
+                            <td class="time-cell">15:30-17:00</td>
+                            <td class="activity-cell">世纪公园（可选）</td>
+                            <td class="location-cell">世纪公园</td>
+                            <td class="description-cell">如果天气好，可以在世纪公园放松，体验自然与城市的融合</td>
+                            <td class="tips-cell">如果时间紧张或天气不好，可以跳过此景点，直接前往晚餐地点</td>
+                        </tr>
+                        <tr>
+                            <td class="time-cell">17:00-18:30</td>
+                            <td class="activity-cell">晚餐</td>
+                            <td class="location-cell">陆家嘴或外滩</td>
+                            <td class="description-cell">在黄浦江畔的景观餐厅享用晚餐，品尝上海本帮菜或国际美食</td>
+                            <td class="tips-cell">推荐外滩18号、外滩3号等景观餐厅，需要提前预订</td>
+                        </tr>
+                        <tr>
+                            <td class="time-cell">18:30-20:00</td>
+                            <td class="activity-cell">黄浦江夜游 / 外滩夜景</td>
+                            <td class="location-cell">外滩</td>
+                            <td class="description-cell">欣赏黄浦江两岸的璀璨夜景，外滩建筑群在灯光下格外迷人</td>
+                            <td class="tips-cell">夜晚的外滩是上海最美的风景，建议多拍照片留念</td>
+                        </tr>
+                        <tr>
+                            <td class="time-cell">20:00-21:00</td>
+                            <td class="activity-cell">新天地夜生活</td>
+                            <td class="location-cell">新天地</td>
+                            <td class="description-cell">在新天地感受上海的夜生活，可以选择酒吧或咖啡厅放松</td>
+                            <td class="tips-cell">新天地是上海时尚地标，有很多特色酒吧和餐厅</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 交通建议 -->
+            <div class="section">
+                <div class="section-title">🚇 交通建议</div>
+                <div class="info-grid">
+                    
+                    <div class="info-card">
+                        <h3>地铁</h3>
+                        <p>建议购买地铁一日票，方便快捷</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>轮渡</h3>
+                        <p>外滩到陆家嘴可以乘坐轮渡，体验黄浦江风光</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>步行</h3>
+                        <p>外滩、南京路、豫园等景点之间可以步行</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 美食推荐 -->
+            <div class="section">
+                <div class="section-title">🍜 美食推荐</div>
+                <div class="info-grid">
+                    
+                    <div class="info-card">
+                        <h3>早餐</h3>
+                        <div class="food-list">
+                            <span class="food-tag">生煎包</span><span class="food-tag">小笼包</span><span class="food-tag">灌汤包</span><span class="food-tag">豆浆油条</span>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <h3>午餐</h3>
+                        <div class="food-list">
+                            <span class="food-tag">南翔小笼包</span><span class="food-tag">本帮菜</span><span class="food-tag">上海小馄饨</span><span class="food-tag">生煎馒头</span>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <h3>晚餐</h3>
+                        <div class="food-list">
+                            <span class="food-tag">上海本帮菜</span><span class="food-tag">黄浦江景观餐厅</span><span class="food-tag">国际美食</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 实用提示 -->
+            <div class="section">
+                <div class="section-title">💡 实用提示</div>
+                <div class="tips-list">
+                    <ul>
+                        <li>带好身份证，部分景点需要实名制</li><li>建议使用微信/支付宝扫码乘地铁</li><li>避开12:00-14:00和17:00-19:00的交通高峰</li><li>提前预订热门景点门票（如东方明珠、上海中心）</li><li>注意天气变化，带好雨具</li><li>外滩和陆家嘴是拍照的最佳地点</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
