@@ -1,6 +1,7 @@
 import requests
 from http import HTTPStatus
 import dashscope
+import qwen_agent
 
 # 设置 DashScope API Key
 dashscope.api_key = "你的API KEY"

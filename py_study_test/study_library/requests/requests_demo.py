@@ -4,8 +4,6 @@ import requests
 
 """
 requests 是一个非常流行的 Python 库，用于发送 HTTP 请求。它提供了简单而强大的 API，使得与 HTTP 服务的交互变得非常容易。以下是一些 requests 库中常用的 API 和功能的介绍。
-
-
 """
 
 ip = "127.0.0.1:"

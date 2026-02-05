@@ -3,7 +3,7 @@
 依赖包介绍：
 - googletrans: 谷歌翻译
 - jinja2: 模板引擎
-- pandas: 数据处理
+- pandas_: 数据处理
 - requests: http请求
 - selenium 爬虫
 - websocket websocket客户端通信

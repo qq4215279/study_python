@@ -33,6 +33,11 @@ a_dir = "api2/电影/港台/周星驰"
 # 7. os.path.dirname(path)  获取目录路径部分
 # print(os.path.dirname(a_path))  # api2/电影/港台/周星驰
 
+# 7.2. os.path.dirname(__file__)
+print("7.2. __file__: ", __file__)
+print("7.2. os.path.dirname(__file__): ", os.path.dirname(__file__))
+
+
 # 8. os.path.getatime(filename)  返回文件的最后访问时间
 # print(os.path.getctime(a_path))  # 1711960587.35217
 
@@ -56,4 +61,3 @@ a_abspath = os.path.abspath(a_path)  # 返回绝对路径
 
 # 14. os.path.expanduser("~")  获取用户目录
 # print(os.path.expanduser("~"))  # C:\Users\D0381
-
