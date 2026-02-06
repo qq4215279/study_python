@@ -12,11 +12,11 @@ from langchain_core.runnables import RunnableMap
 
 from models import get_lc_ali_all_clients
 
-#获得访问大模型和嵌入模型客户端
-llm,embeddings_model = get_lc_ali_all_clients()
+# 获得访问大模型和嵌入模型客户端
+llm, embeddings_model = get_lc_ali_all_clients()
 
 # 加载文档
-loader = TextLoader("./deepseek百度百科.txt",encoding="utf-8")
+loader = TextLoader("./deepseek百度百科.txt", encoding="utf-8")
 docs = loader.load()
 
 # 创建文档分割器，并分割文档
@@ -24,23 +24,22 @@ text_splitter = RecursiveCharacterTextSplitter(chunk_size=600, chunk_overlap=100
 splits = text_splitter.split_documents(docs)
 
 # 创建向量数据库
-vectorstore = Chroma.from_documents(documents=splits, 
+vectorstore = Chroma.from_documents(documents=splits,
                                     embedding=embeddings_model)
 # 创建检索器
 retriever = vectorstore.as_retriever()
 
-relevant_docs= retriever.invoke('deepseek的应用场景')
+relevant_docs = retriever.invoke('deepseek的应用场景')
 print(relevant_docs)
 print(len(relevant_docs))
 
-
-#创建prompt模板
+# 创建prompt模板
 template = """请根据下面给出的上下文来回答问题:
 {context}
 问题: {question}
 """
 
-#由模板生成prompt
+# 由模板生成prompt
 prompt = ChatPromptTemplate.from_template(template)
 
 chain = RunnableMap({
@@ -53,19 +52,20 @@ response = chain.invoke({"question": "deepseek的应用场景"})
 print(response)
 
 print("--------------开始优化-------------------")
-#方法一：使用langchain的MultiQueryRetriever
+# 方法一：使用langchain的MultiQueryRetriever
 import logging
+
 logging.basicConfig()
 logging.getLogger("langchain.retrievers.multi_query").setLevel(logging.INFO)
 retrieval_from_llm = MultiQueryRetriever.from_llm(
     retriever=retriever,
     llm=llm
 )
-unique_docs = retrieval_from_llm.invoke({"question":'deepseek的应用场景'})
+unique_docs = retrieval_from_llm.invoke({"question": 'deepseek的应用场景'})
 print(unique_docs)
 print(len(unique_docs))
 
-#方法二：自定义prompt
+# 方法二：自定义prompt
 # prompt模版
 template = """你是一个AI语言模型助手。你的任务是生成5个给定用户问题的不同版本，以从向量中检索相关文档
 数据库。通过对用户问题产生多种观点，你的目标是提供帮助用户克服了基于距离的相似性搜索的一些限制。
@@ -73,14 +73,15 @@ template = """你是一个AI语言模型助手。你的任务是生成5个给定
 
 prompt_perspectives = ChatPromptTemplate.from_template(template)
 generate_queries = (
-    prompt_perspectives 
-    | llm
-    | StrOutputParser() 
-    | (lambda x: x.split("\n"))
+        prompt_perspectives
+        | llm
+        | StrOutputParser()
+        | (lambda x: x.split("\n"))
 )
 
-response = generate_queries.invoke({"question":'deepseek的应用场景'})
+response = generate_queries.invoke({"question": 'deepseek的应用场景'})
 print(response)
+
 
 def get_unique_union(documents: list[list]):
     """ 获取检索文档的唯一并集 """
@@ -91,12 +92,13 @@ def get_unique_union(documents: list[list]):
     # 返回去重后的文档列表
     return [loads(doc) for doc in unique_docs]
 
+
 # 进行检索
 '''假设 generate_queries 生成了以下查询列表：["deepseek的应用场景", "deepseek的使用方法", "deepseek的优势"]
 '''
 question = "deepseek的应用场景"
 retrieval_chain = generate_queries | retriever.map() | get_unique_union
-docs = retrieval_chain.invoke({"question":question})
+docs = retrieval_chain.invoke({"question": question})
 print(len(docs))
 
 print("--------------优化后-------------------")
@@ -108,14 +110,13 @@ template = """请根据下面给出的上下文来回答问题:
 prompt = ChatPromptTemplate.from_template(template)
 
 final_rag_chain = (
-    {"context": retrieval_chain, 
-    "question": itemgetter("question")}
-    | prompt
-    | llm
-    | StrOutputParser()
+        {"context": retrieval_chain,
+         "question": itemgetter("question")}
+        | prompt
+        | llm
+        | StrOutputParser()
 )
 
-
 question = "deepseek的应用场景"
-response = final_rag_chain.invoke({"question":question})
+response = final_rag_chain.invoke({"question": question})
 print(response)

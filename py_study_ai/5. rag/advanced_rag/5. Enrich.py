@@ -10,9 +10,9 @@ from langchain_core.output_parsers import JsonOutputParser
 import json
 import os
 
-from models import  get_lc_o_ali_model_client
+from models import get_lc_o_ali_model_client
 
-#获得访问大模型客户端
+# 获得访问大模型客户端
 llm = get_lc_o_ali_model_client()
 
 user_input = "我想订一张长沙去北京的机票"
@@ -28,8 +28,6 @@ intent_prompt = PromptTemplate(
 )
 
 intent_chain = intent_prompt | llm
-
-
 
 intent = intent_chain.invoke({"user_input": user_input, "templates": str(list(templates.keys()))}).content
 
@@ -87,7 +85,7 @@ info_request = with_message_history.invoke(input={"input": info_prompt},
                                            config={"configurable": {"session_id": "unused"}}).content
 parser = JsonOutputParser()
 json_data = parser.parse(info_request)
-print("json_data：",json_data)
+print("json_data：", json_data)
 
 # 循环判断是否完整，并提交用户补充信息
 while json_data.get('isComplete', False) is False:

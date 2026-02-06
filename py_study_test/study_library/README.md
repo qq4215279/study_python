@@ -14,7 +14,7 @@
   - streamlit 于可扩展性，相比 gradio 复杂，完全熟练使用需要一定时间。可以使用Python编写完整的包含前后端的交互式应用。适合场景相对复杂，想要构建丰富多样交互页面的开发者。
   - flask Python Web框架，给可视化大屏提供数据接口
   - fastapi web框架
-  - uvicorn web服务
+  - uvicorn 是一款闪电般快速的 ASGI（Asynchronous Server Gateway Interface）服务器，专为 Python 异步 Web 应用设计，是 FastAPI、Starlette 等主流异步 Web 框架的标配运行时。相较于传统的 WSGI 服务器（如 Gunicorn），Uvicorn 原生支持异步 I/O，能高效处理高并发请求。
   - pandas 数据处理库（清洗、整理分析、合并）
   - numpy 数组运算 - 矩阵运算库
   - scipy 科学计算库

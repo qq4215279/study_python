@@ -8,10 +8,10 @@ from langchain.chains.query_constructor.base import (
     StructuredQueryOutputParser,
     get_query_constructor_prompt,
 )
-from models import  get_lc_a_t_mix_clients
+from models import get_lc_a_t_mix_clients
 
-#获得访问大模型和嵌入模型客户端
-llm,embeddings_model = get_lc_a_t_mix_clients()
+# 获得访问大模型和嵌入模型客户端
+llm, embeddings_model = get_lc_a_t_mix_clients()
 
 # 加载文档
 docs = [
@@ -68,7 +68,7 @@ metadata_field_info = [
         type="string",
     ),
     AttributeInfo(
-        name="rating", 
+        name="rating",
         description="技术价值评估得分（1-10分）",
         type="float"
     )
@@ -94,10 +94,10 @@ prompt = get_query_constructor_prompt(
 output_parser = StructuredQueryOutputParser.from_components()
 query_constructor = prompt | llm | output_parser
 
-print("提示词：",prompt.format(query="我想了解评分在9分以上的文章"))
+print("提示词：", prompt.format(query="我想了解评分在9分以上的文章"))
 print("提示词显示结束-------------------------------")
 
-print("结构化查询结果：",query_constructor.invoke(
+print("结构化查询结果：", query_constructor.invoke(
     {
         "query": "作者B在2023年发布的文章"
     }
